@@ -264,7 +264,7 @@ if selected_tab == "Input":
         else:
             color = "red"
         st.markdown(f"<h5>Remaining Fund: ₹ <span style='color:{color};'>{remaining_fund:,}</span></h5>", unsafe_allow_html=True)
-        st.subheader("Saved Data")
+        st.subheader("Summary")
         st.dataframe(saved_data[saved_data["District Name"] == name])
 
 
