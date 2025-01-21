@@ -258,7 +258,7 @@ if selected_tab == "Input":
         # Display the table below
         alloted_fund = district[district["District Name"] == name]["Alloted Budget"].values.tolist()[0]
         remaining_fund = alloted_fund - saved_data[saved_data["District Name"] == name]["Total Value"].sum()
-        st.markdown (f"Alloted Funds: ₹ {alloted_fund:,}")
+        st.subheader (f"Alloted Funds: ₹ {alloted_fund:,}")
         st.subheader(f"Remaining Funds: ₹ {remaining_fund:,}")
         st.subheader("Saved Data")
         st.dataframe(saved_data[saved_data["District Name"] == name])
