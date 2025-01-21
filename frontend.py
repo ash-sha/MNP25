@@ -258,12 +258,12 @@ if selected_tab == "Input":
         # Display the table below
         alloted_fund = district[district["District Name"] == name]["Alloted Budget"].values.tolist()[0]
         remaining_fund = alloted_fund - saved_data[saved_data["District Name"] == name]["Total Value"].sum()
-        st.markdown(f"<h5>Total Value: ₹ <span style='color:blue;'>{alloted_fund:,}</span></h5>", unsafe_allow_html=True)
+        st.markdown(f"<h5>Alloted Fund: ₹ <span style='color:blue;'>{alloted_fund:,}</span></h5>", unsafe_allow_html=True)
         if remaining_fund > 0:
             color = "green"
         else:
             color = "red"
-        st.markdown(f"<h5>Total Value: ₹ <span style='color:{color};'>{remaining_fund:,}</span></h5>", unsafe_allow_html=True)
+        st.markdown(f"<h5>Remaining Fund: ₹ <span style='color:{color};'>{remaining_fund:,}</span></h5>", unsafe_allow_html=True)
         st.subheader("Saved Data")
         st.dataframe(saved_data[saved_data["District Name"] == name])
 
