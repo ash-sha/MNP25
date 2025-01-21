@@ -256,9 +256,13 @@ if selected_tab == "Input":
                 saved_data.to_csv(saved_data_file, index=False)
 
         # Display the table below
+        alloted_fund = district[district["District Name"] == name]["Alloted Budget"].values.tolist()[0]
+        remaining_fund = alloted_fund - saved_data[saved_data["District Name"] == name]["Total Value"].sum()
+        st.markdown (f"Alloted Funds: ₹ {alloted_fund:,}")
+        st.subheader(f"Remaining Funds: ₹ {remaining_fund:,}")
         st.subheader("Saved Data")
-        st.write(f"Alloted Funds")
         st.dataframe(saved_data[saved_data["District Name"] == name])
+
 
         st.download_button(
             label="Download Records",
