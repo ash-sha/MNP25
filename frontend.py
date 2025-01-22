@@ -280,11 +280,11 @@
 import streamlit as st
 import pandas as pd
 import os
-from pydrive2.auth import GoogleAuth
-from pydrive2.drive import GoogleDrive
-from googleapiclient.http import MediaFileUpload
-from googleapiclient.discovery import build
-from google.oauth2 import service_account
+# from pydrive2.auth import GoogleAuth
+# from pydrive2.drive import GoogleDrive
+# from googleapiclient.http import MediaFileUpload
+# from googleapiclient.discovery import build
+# from google.oauth2 import service_account
 
 def upload_data(saved_data_file):
     creds = service_account.Credentials.from_service_account_file('mnpdatabase-4c0143764944.json',
