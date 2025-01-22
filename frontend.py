@@ -280,15 +280,36 @@
 import streamlit as st
 import pandas as pd
 import os
+from pydrive2.auth import GoogleAuth
+from pydrive2.drive import GoogleDrive
+from googleapiclient.http import MediaFileUpload
+from googleapiclient.discovery import build
+from google.oauth2 import service_account
 
-# Data Files
-article = "articles.csv"
-saved_data_file = "saved_data.csv"
+def upload_data(saved_data_file):
+    creds = service_account.Credentials.from_service_account_file('mnpdatabase-4c0143764944.json',
+        scopes=['https://www.googleapis.com/auth/drive'])
+
+    drive_service = build('drive', 'v3', credentials=creds)
+
+    file_metadata = {
+        'name': saved_data_file,
+        'parents': ['1ritUg2jlAaf2GsiKWndw93_i9Y6yy0ll']  # ID of the folder where you want to upload
+    }
+
+    file_path = 'articles.csv'
+
+    media = MediaFileUpload(file_path, mimetype='text/csv')
+
+    file = drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+
 
 # Load Data
-article = pd.read_csv(article)
+article = pd.read_csv("articles.csv")
 district = pd.read_csv("District_beneficiary.csv")
 public = pd.read_excel("DISTRICT AND PUBLIC DATA BASE 24122024.xlsx",sheet_name="DO NOT TOUCH_2021 to 24 data")
+
+
 # Initialize App
 st.set_page_config(page_title="மக்கள் நல பணி", layout="wide")
 st.title("மக்கள் நல பணி")
@@ -301,6 +322,7 @@ if selected_tab == "Input":
     type_choice = st.radio("Beneficiary Type", ["District", "Public", "Institutions"], horizontal=True)
 
     if type_choice == "District":
+
         # Input fields
         name = st.selectbox("District Name", district["District Name"].unique().tolist())
         article_name = st.multiselect("Enter Article Name", article["Articles"].unique().tolist())
@@ -314,6 +336,7 @@ if selected_tab == "Input":
             total_value = 0  # No value if quantity is 0
 
         # Load saved data
+        saved_data_file = "saved_data.csv"
         if os.path.exists(saved_data_file):
             saved_data = pd.read_csv(saved_data_file)
         else:
@@ -355,6 +378,7 @@ if selected_tab == "Input":
                 # Save to CSV
                 saved_data.to_csv(saved_data_file, index=False)
 
+
         # Display the table below
         alloted_fund = district[district["District Name"] == name]["Alloted Budget"].values.tolist()[0]
         remaining_fund = alloted_fund - saved_data[saved_data["District Name"] == name]["Total Value"].sum()
@@ -382,6 +406,6 @@ if selected_tab == "Input":
             Name_b = public[public["AADHAR No.1"]== aadhar_no]["NAME"].values.tolist()[0]
             Art_n = public[public["AADHAR No.1"]== aadhar_no]["BENEFICIARY ITEM"].values.tolist()[0]
             year_p = public[public["AADHAR No.1"]== aadhar_no]["YEAR"].values.tolist()[0]
-            st.success(f"Aadhaar Number {aadhar_no} is present in the database.Beneficiary {Name_b} of {Art_n} at {year_p}")
+            st.error(f"Aadhaar Number {aadhar_no} is present in the database.Beneficiary {Name_b} of {Art_n} at {year_p}")
         else:
-            st.error(f"Aadhaar Number {aadhar_no} is NOT present in the database.")
+            st.success(f"Aadhaar Number {aadhar_no} is NOT present in the database.")
