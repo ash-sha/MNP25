@@ -33,8 +33,8 @@ def read_file(file_id):
             print(f"Download progress: {int(status.progress() * 100)}%")
 
         file_stream.seek(0)  # Reset the stream position
-        master_saved = pd.read_csv(file_stream)
-        return master_saved
+        df = pd.read_csv(file_stream)
+        return df
 
     except Exception as e:
         st.error(f"Failed to read file: {e}")
