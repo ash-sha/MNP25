@@ -1,0 +1,277 @@
+## Without delete module
+import io
+
+import streamlit as st
+import pandas as pd
+import os
+
+# Check if the data file exists
+article = "articles.csv"
+saved_data_file = "saved_data.csv"
+
+# if not os.path.exists(data_file):
+#     st.error(f"The file '{data_file}' was not found.")
+#     st.stop()
+
+# Load data
+article = pd.read_csv(article)
+district = pd.read_csv("District_beneficiary.csv")
+
+# Initialize app
+st.set_page_config(page_title="மக்கள் நல பணி", layout="wide")
+st.title("மக்கள் நல பணி")
+
+# Sidebar navigation
+selected_tab = st.sidebar.radio("Select Tab", ["Input"])
+
+if selected_tab == "Input":
+    # Radio buttons to select type
+    type_choice = st.radio("Beneficiary Type", ["District", "Public", "Institutions"], horizontal=True)
+
+    if type_choice == "District":
+        # Input fields
+        name = st.selectbox("District Name", district["District Name"].unique().tolist())
+        article_name = st.selectbox("Enter Article Name", article["Articles"].unique().tolist())
+        quantity = st.number_input("Quantity", min_value=1, step=1)
+
+        # Calculate and display total value
+        total_value = quantity * article[article["Articles"]==article_name]["Cost per unit"].tolist()[0]
+        st.subheader(f"₹ {total_value:,}")
+
+        # Load saved data
+        if os.path.exists(saved_data_file):
+            saved_data = pd.read_csv(saved_data_file)
+        else:
+            saved_data = pd.DataFrame(columns=["District Name", "Article Name", "Quantity", "Total Value"])
+
+        # Save button
+        if st.button("Save"):
+            if not name or not article_name:
+                st.warning("Please fill all fields before saving.")
+            else:
+                # Check for duplicates and replace if necessary
+                duplicate_condition = (
+                        (saved_data["District Name"] == name) &
+                        (saved_data["Article Name"] == article_name)
+                )
+                if duplicate_condition.any():
+                    saved_data.loc[duplicate_condition, ["Quantity", "Total Value"]] = [quantity, total_value]
+                    st.info("Duplicate entry found. Existing record updated.")
+                else:
+                    new_entry = {
+                        "District Name": name,
+                        "Article Name": article_name,
+                        "Quantity": quantity,
+                        "Total Value": total_value,
+                    }
+                    saved_data = pd.concat([saved_data, pd.DataFrame([new_entry])], ignore_index=True)
+                    st.success("Data saved successfully!")
+
+                # Save to CSV
+                saved_data.to_csv(saved_data_file, index=False)
+
+        # Display the table below
+        st.subheader("Saved Data")
+        st.dataframe(saved_data[saved_data["District Name"] == name])
+
+        st.download_button(
+            label="Download Records",
+            data=saved_data.to_csv(index=False).encode('utf-8'),
+            file_name="District Beneficiaries Records.csv",
+            mime = "text/csv"
+        )
+
+##-----------------------------------------------------------------------------------------------
+### Delete Button
+import streamlit as st
+import pandas as pd
+import os
+
+# Data Files
+article = "articles.csv"
+saved_data_file = "saved_data.csv"
+
+# Load Data
+article = pd.read_csv(article)
+district = pd.read_csv("District_beneficiary.csv")
+
+# Initialize App
+st.set_page_config(page_title="மக்கள் நல பணி", layout="wide")
+st.title("மக்கள் நல பணி")
+
+# Sidebar Navigation
+selected_tab = st.sidebar.radio("Select Tab", ["Input"])
+
+if selected_tab == "Input":
+    # Radio buttons to select type
+    type_choice = st.radio("Beneficiary Type", ["District", "Public", "Institutions"], horizontal=True)
+
+    if type_choice == "District":
+        # Input fields
+        name = st.selectbox("District Name", district["District Name"].unique().tolist())
+        article_name = st.selectbox("Enter Article Name", article["Articles"].unique().tolist())
+        quantity = st.number_input("Quantity", min_value=0, step=1)
+
+        # Calculate and display total value
+        total_value = quantity * article[article["Articles"] == article_name]["Cost per unit"].tolist()[0]
+        st.subheader(f"₹ {total_value:,}")
+
+        # Load saved data
+        if os.path.exists(saved_data_file):
+            saved_data = pd.read_csv(saved_data_file)
+        else:
+            saved_data = pd.DataFrame(columns=["District Name", "Article Name", "Quantity", "Total Value"])
+
+        # Columns layout for Save and Delete buttons side by side
+        col1, col2 = st.columns([1, 1])  # Creates two equal-width columns
+
+        # Save button
+        with col1:
+            if st.button("Save"):
+                if not name or not article_name:
+                    st.warning("Please fill all fields before saving.")
+                else:
+                    # Check for duplicates and replace if necessary
+                    duplicate_condition = (
+                            (saved_data["District Name"] == name) &
+                            (saved_data["Article Name"] == article_name)
+                    )
+                    if duplicate_condition.any():
+                        saved_data.loc[duplicate_condition, ["Quantity", "Total Value"]] = [quantity, total_value]
+                        st.info("Duplicate entry found. Existing record updated.")
+                    else:
+                        new_entry = {
+                            "District Name": name,
+                            "Article Name": article_name,
+                            "Quantity": quantity,
+                            "Total Value": total_value,
+                        }
+                        saved_data = pd.concat([saved_data, pd.DataFrame([new_entry])], ignore_index=True)
+                        st.success("Data saved successfully!")
+
+                    # Save to CSV
+                    saved_data.to_csv(saved_data_file, index=False)
+
+        # Delete button (works with the table shown below)
+        with col2:
+            delete_condition = (
+                    (saved_data["District Name"] == name) &
+                    (saved_data["Article Name"] == article_name)
+            )
+            if st.button("Delete") and delete_condition.any():
+                # Remove the selected row from the DataFrame
+                saved_data = saved_data[~delete_condition]
+                saved_data.to_csv(saved_data_file, index=False)
+                st.success(f"Record for {name} and {article_name} deleted successfully!")
+
+        # Display the table below
+        st.subheader("Saved Data")
+        st.dataframe(saved_data[saved_data["District Name"] == name])
+
+        st.download_button(
+            label="Download Records",
+            data=saved_data.to_csv(index=False).encode('utf-8'),
+            file_name="District Beneficiaries Records.csv",
+            mime="text/csv"
+        )
+
+##_------------------------------------------------------------------------------------------------
+#### with Quantity as delete feature
+
+import streamlit as st
+import pandas as pd
+import os
+
+# Data Files
+article = "articles.csv"
+saved_data_file = "saved_data.csv"
+
+# Load Data
+article = pd.read_csv(article)
+district = pd.read_csv("District_beneficiary.csv")
+
+# Initialize App
+st.set_page_config(page_title="மக்கள் நல பணி", layout="wide")
+st.title("மக்கள் நல பணி")
+
+# Sidebar Navigation
+selected_tab = st.sidebar.radio("Select Tab", ["Input"])
+
+if selected_tab == "Input":
+    # Radio buttons to select type
+    type_choice = st.radio("Beneficiary Type", ["District", "Public", "Institutions"], horizontal=True)
+
+    if type_choice == "District":
+        # Input fields
+        name = st.selectbox("District Name", district["District Name"].unique().tolist())
+        article_name = st.selectbox("Enter Article Name", article["Articles"].unique().tolist())
+        quantity = st.number_input("Quantity", min_value=0, step=1)  # Allow 0 to delete the record
+
+        # Calculate and display total value if quantity > 0
+        if quantity > 0:
+            total_value = quantity * article[article["Articles"] == article_name]["Cost per unit"].tolist()[0]
+            st.subheader(f"₹ {total_value:,}")
+        else:
+            total_value = 0  # No value if quantity is 0
+
+        # Load saved data
+        if os.path.exists(saved_data_file):
+            saved_data = pd.read_csv(saved_data_file)
+        else:
+            saved_data = pd.DataFrame(columns=["District Name", "Article Name", "Quantity", "Total Value"])
+
+        # Save button
+        if st.button("Save"):
+            if not name or not article_name:
+                st.warning("Please fill all fields before saving.")
+            else:
+                # Check if quantity is 0 (delete the record)
+                if quantity == 0:
+                    # Find and remove the selected row from the DataFrame
+                    delete_condition = (
+                        (saved_data["District Name"] == name) &
+                        (saved_data["Article Name"] == article_name)
+                    )
+                    saved_data = saved_data[~delete_condition]  # Remove the record
+                    st.success(f"Record for {name} and {article_name} deleted successfully!")
+                else:
+                    # Check for duplicates and replace if necessary
+                    duplicate_condition = (
+                        (saved_data["District Name"] == name) &
+                        (saved_data["Article Name"] == article_name)
+                    )
+                    if duplicate_condition.any():
+                        saved_data.loc[duplicate_condition, ["Quantity", "Total Value"]] = [quantity, total_value]
+                        st.info("Duplicate entry found. Existing record updated.")
+                    else:
+                        new_entry = {
+                            "District Name": name,
+                            "Article Name": article_name,
+                            "Quantity": quantity,
+                            "Total Value": total_value,
+                        }
+                        saved_data = pd.concat([saved_data, pd.DataFrame([new_entry])], ignore_index=True)
+                        st.success("Data saved successfully!")
+
+                # Save to CSV
+                saved_data.to_csv(saved_data_file, index=False)
+
+        # Display the table below
+        alloted_fund = district[district["District Name"] == name]["Alloted Budget"].values.tolist()[0]
+        remaining_fund = alloted_fund - saved_data[saved_data["District Name"] == name]["Total Value"].sum()
+        st.markdown(f"<h5>Alloted Fund: ₹ <span style='color:blue;'>{alloted_fund:,}</span></h5>", unsafe_allow_html=True)
+        if remaining_fund > 0:
+            color = "green"
+        else:
+            color = "red"
+        st.markdown(f"<h5>Remaining Fund: ₹ <span style='color:{color};'>{remaining_fund:,}</span></h5>", unsafe_allow_html=True)
+        st.subheader("Summary")
+        st.dataframe(saved_data[saved_data["District Name"] == name])
+
+
+        st.download_button(
+            label="Download Records",
+            data=saved_data.to_csv(index=False).encode('utf-8'),
+            file_name="District Beneficiaries Records.csv",
+            mime="text/csv"
+        )
