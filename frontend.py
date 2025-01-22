@@ -378,10 +378,10 @@ if selected_tab == "Input":
     elif type_choice == "Public":
         aadhar_no = st.text_input("Enter aadhar Number")
 
-        if aadhar_no in public["AADHAR No"].astype(str).values:
-            Name_b = public[public["AADHAR No"]== aadhar_no]["NAME"].values.tolist()[0]
-            Art_n = public[public["AADHAR No"]== aadhar_no]["BENEFICIARY ITEM"].values.tolist()[0]
-            year_p = public[public["AADHAR No"]== aadhar_no]["YEAR"].values.tolist()[0]
+        if aadhar_no in public["AADHAR No.1"].astype(str).values:
+            Name_b = public[public["AADHAR No.1"]== aadhar_no]["NAME"].values.tolist()[0]
+            Art_n = public[public["AADHAR No.1"]== aadhar_no]["BENEFICIARY ITEM"].values.tolist()[0]
+            year_p = public[public["AADHAR No.1"]== aadhar_no]["YEAR"].values.tolist()[0]
             st.success(f"Aadhaar Number {aadhar_no} is present in the database.Beneficiary {Name_b} of {Art_n} at {year_p}")
         else:
             st.error(f"Aadhaar Number {aadhar_no} is NOT present in the database.")
