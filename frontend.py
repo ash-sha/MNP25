@@ -11,6 +11,7 @@ from googleapiclient.discovery import build
 from google.oauth2 import service_account
 import streamlit_authenticator as stauth
 import yaml
+import time
 from yaml.loader import SafeLoader
 
 with open('config.yaml') as file:
@@ -80,7 +81,9 @@ if st.session_state['authentication_status']:
             fileId=file_id,
             media_body=media).execute()
 
-        st.success(f"File updated: {updated_file.get('id')}")
+        alert1 = st.success(f"File updated: {updated_file.get('id')}")
+        time.sleep(3)
+        alert1.empty()
 
 
 
@@ -109,7 +112,7 @@ if st.session_state['authentication_status']:
             # Calculate and display total value if quantity > 0
             if quantity > 0:
                 total_value = quantity * cpu
-                st.subheader(f"₹ {total_value:,}")
+                st.text_input(f"₹ ")
             else:
                 total_value = 0  # No value if quantity is 0
 
@@ -131,7 +134,10 @@ if st.session_state['authentication_status']:
                             (saved_data["REQUESTED ARTICLE"] == article_name)
                         )
                         saved_data = saved_data[~delete_condition]  # Remove the record
-                        st.success(f"Record for {name} and {article_name} deleted successfully!")
+                        alert2 = st.success(f"Record for {name} and {article_name} deleted successfully!")
+                        time.sleep(3)
+                        alert2.empty()
+
                     else:
                         # Check for duplicates and replace if necessary
                         duplicate_condition = (
@@ -140,7 +146,10 @@ if st.session_state['authentication_status']:
                         )
                         if duplicate_condition.any():
                             saved_data.loc[duplicate_condition, ["QUANTITY", "TOTAL COST"]] = [quantity, total_value]
-                            st.info("Duplicate entry found. Existing record updated.")
+                            alert3 = st.info("Duplicate entry found. Existing record updated.")
+                            time.sleep(3)
+                            alert3.empty()
+
                         else:
                             new_entry = {
                                 "NAME OF THE DISTRICT": name,
@@ -149,13 +158,26 @@ if st.session_state['authentication_status']:
                                 "TOTAL COST": total_value,
                                 "COST PER UNIT": cpu,
                             }
-                            saved_data = pd.concat([saved_data, pd.DataFrame([new_entry])], ignore_index=True)
-                            saved_data = saved_data.sort_values(by=["NAME OF THE DISTRICT","REQUESTED ARTICLE"],ascending=True).reset_index(drop=True)
-                            st.success("Data saved successfully!")
+
+                            saved_data = pd.concat([saved_data, pd.DataFrame([new_entry])], ignore_index=True).sort_values(by=["NAME OF THE DISTRICT","REQUESTED ARTICLE"],ascending=True).reset_index(drop=True)
+
+                    alloted_fund = district[district["District Name"] == name]["Alloted Budget"].values.tolist()[0]
+                    remaining_fund = alloted_fund - saved_data[saved_data["NAME OF THE DISTRICT"] == name]["TOTAL COST"].sum()
+
+                    last_row_index = saved_data[saved_data["NAME OF THE DISTRICT"] == name].index[-1]
+                    first_row_index = saved_data[saved_data["NAME OF THE DISTRICT"] == name].index[0]
+
+                    # Add 'ALLOTTED FUND' and 'REMAINING FUND' to the last row
+                    saved_data.loc[saved_data["NAME OF THE DISTRICT"] == name, ["ALLOTTED FUNDS","EXCESS/SHORTAGE"]] = None
+                    saved_data.loc[first_row_index, "ALLOTTED FUNDS"] = alloted_fund
+                    saved_data.loc[last_row_index, "EXCESS/SHORTAGE"] = remaining_fund
+                    saved_data = saved_data.reset_index(drop=True)
+                    alert4 = st.success("Data saved successfully!")
+                    time.sleep(3)
+                    alert4.empty()
 
                     # Save to CSV
                     update_file(file_id, saved_data)
-
 
 
             # Display the table below
@@ -178,16 +200,53 @@ if st.session_state['authentication_status']:
                 mime="text/csv"
             )
 
-        elif type_choice == "Public":
-            aadhar_no = st.text_input("Enter aadhar Number")
 
-            if aadhar_no in public["AADHAR No.1"].astype(str).values:
-                Name_b = public[public["AADHAR No.1"]== aadhar_no]["NAME"].values.tolist()[0]
-                Art_n = public[public["AADHAR No.1"]== aadhar_no]["BENEFICIARY ITEM"].values.tolist()[0]
-                year_p = public[public["AADHAR No.1"]== aadhar_no]["YEAR"].values.tolist()[0]
-                st.error(f"Aadhaar Number {aadhar_no} is present in the database.Beneficiary {Name_b} of {Art_n} at {year_p}")
-            else:
-                st.success(f"Aadhaar Number {aadhar_no} is NOT present in the database.")
+
+
+
+        elif type_choice == "Public":
+
+            # Initialize session state for checked Aadhaar numbers
+            if "checked_aadhar" not in st.session_state:
+                st.session_state["checked_aadhar"] = set()
+
+            # Input for Aadhaar Number
+            aadhar_no = st.text_input("Enter Aadhaar Number")
+
+            if aadhar_no:
+
+                # Check if the Aadhaar number has already been checked
+
+                if aadhar_no in st.session_state["checked_aadhar"]:
+
+                    st.warning(f"You have already checked Aadhaar Number {aadhar_no}.")
+
+                else:
+
+                    # Add the Aadhaar number to the checked list
+
+                    st.session_state["checked_aadhar"].add(aadhar_no)
+
+                # Check if the Aadhaar number exists in the database
+
+                if aadhar_no in public["AADHAR No.1"].astype(str).values:
+
+                    Name_b = public[public["AADHAR No.1"] == aadhar_no]["NAME"].values.tolist()[0]
+
+                    Art_n = public[public["AADHAR No.1"] == aadhar_no]["BENEFICIARY ITEM"].values.tolist()[0]
+
+                    year_p = public[public["AADHAR No.1"] == aadhar_no]["YEAR"].values.tolist()[0]
+
+                    st.error(
+                        f"Aadhaar Number {aadhar_no} is present in the database. Beneficiary: {Name_b}, Item: {Art_n}, Year: {year_p}.")
+
+                else:
+
+                    st.success(f"Aadhaar Number {aadhar_no} is NOT present in the database.")
+
+
+
+
 
 
 
