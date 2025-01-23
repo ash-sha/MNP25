@@ -130,7 +130,7 @@ if selected_tab == "Input":
                             "COST PER UNIT": cpu,
                         }
                         saved_data = pd.concat([saved_data, pd.DataFrame([new_entry])], ignore_index=True)
-                        saved_data = saved_data.sortby(["NAME OF THE DISTRICT","REQUESTED ARTICLE"]).reset_index(drop=True)
+                        saved_data = saved_data.sort_values(by=["NAME OF THE DISTRICT","REQUESTED ARTICLE"],ascending=True).reset_index(drop=True)
                         st.success("Data saved successfully!")
 
                 # Save to CSV
