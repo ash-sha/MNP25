@@ -78,8 +78,7 @@ if st.session_state['authentication_status']:
         media = MediaIoBaseUpload(updated_stream, mimetype="text/csv")
         updated_file = drive_service.files().update(
             fileId=file_id,
-            media_body=media
-        ).execute()
+            media_body=media).execute()
 
         st.success(f"File updated: {updated_file.get('id')}")
 
@@ -88,15 +87,14 @@ if st.session_state['authentication_status']:
     # Load Data
     article = pd.read_csv("articles.csv")
     district = pd.read_csv("District_beneficiary.csv")
-    public = pd.read_excel("DISTRICT AND PUBLIC DATA BASE 24122024.xlsx",sheet_name="DO NOT TOUCH_2021 to 24 data")
-
+    public = pd.read_excel("Public_Beneficiary_21_24.xlsx")
 
 
 
     # Sidebar Navigation
-    selected_tab = st.sidebar.radio("Select Tab", ["Input"])
+    selected_tab = st.sidebar.radio("Select Tab", ["Entry"])
 
-    if selected_tab == "Input":
+    if selected_tab == "Entry":
         # Radio buttons to select type
         type_choice = st.radio("Beneficiary Type", ["District", "Public", "Institutions"], horizontal=True)
 
@@ -163,7 +161,7 @@ if st.session_state['authentication_status']:
             # Display the table below
             alloted_fund = district[district["District Name"] == name]["Alloted Budget"].values.tolist()[0]
             remaining_fund = alloted_fund - saved_data[saved_data["NAME OF THE DISTRICT"] == name]["TOTAL COST"].sum()
-            st.markdown(f"<h5>Alloted Fund: ₹ <span style='color:blue;'>{alloted_fund:,}</span></h5>", unsafe_allow_html=True)
+            st.markdown(f"<h5>Alloted Fund: ₹ <span style='color:black;'>{alloted_fund:,}</span></h5>", unsafe_allow_html=True)
             if remaining_fund > 0:
                 color = "green"
             else:
