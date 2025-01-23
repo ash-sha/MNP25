@@ -278,6 +278,7 @@
 
 
 #### - Accepted 1
+### ------------------------------------------------------------------------------------
 ###_____Multiselect Articles__________________________________________________________________________
 # import io
 # import json
@@ -388,6 +389,8 @@
 #             article_name = st.selectbox("Enter Article Name", article["Articles"].unique().tolist())
 #             quantity = st.number_input("Quantity", min_value=0, step=1)  # Allow 0 to delete the record
 #             cpu = article[article["Articles"] == article_name]["Cost per unit"].tolist()[0]
+#             item_type = st.selectbox("Item Type", ["Article","Aid","Project"])
+#             comment = st.text_area("Enter Comment")
 #
 #             # Calculate and display total value if quantity > 0
 #             if quantity > 0:
@@ -454,6 +457,8 @@
 #                                 "QUANTITY": quantity,
 #                                 "TOTAL COST": total_value,
 #                                 "COST PER UNIT": cpu,
+#                                 "COMMENTS":comment,
+#                                 "ARTICLE TYPE": item_type,
 #                             }
 #
 #                             saved_data = pd.concat([saved_data, pd.DataFrame([new_entry])], ignore_index=True).sort_values(by=["NAME OF THE DISTRICT","REQUESTED ARTICLE"],ascending=True).reset_index(drop=True)
@@ -523,9 +528,9 @@
 #                     st.success(f"Aadhaar Number {aadhar_no} is NOT present in the database.")
 #
 #
-#
-#
 # elif st.session_state['authentication_status'] is False:
 #     st.error('Username/password is incorrect')
 # elif st.session_state['authentication_status'] is None:
-#     st.warning('Please enter your username and password')
+#     alert5 = st.warning('Please enter your username and password')
+#     time.sleep(3)
+#     alert5.empty()

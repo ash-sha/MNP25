@@ -247,10 +247,6 @@ if st.session_state['authentication_status']:
                     st.success(f"Aadhaar Number {aadhar_no} is NOT present in the database.")
 
 
-
-
-
-
 elif st.session_state['authentication_status'] is False:
     st.error('Username/password is incorrect')
 elif st.session_state['authentication_status'] is None:
