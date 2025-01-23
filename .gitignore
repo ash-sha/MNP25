@@ -1,3 +1,6 @@
 .venv
 PalmAI
 saved_data.csv
+.streamlit
+.streamlit/secrets.toml
+mnpdatabase-ca1a93fefdd6.json

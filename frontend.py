@@ -1,5 +1,6 @@
 ###_____Multiselect Articles__________________________________________________________________________
 import io
+import json
 import streamlit as st
 import pandas as pd
 import os
@@ -12,8 +13,13 @@ from google.oauth2 import service_account
 
 # File ID of the existing file on Google Drive
 file_id = "1ry614-7R4-s0uQcv0zrNeS4O0KAbhVEC67rl5_VllGI"  # Replace with your file's ID
-creds = service_account.Credentials.from_service_account_file('mnpdatabase-f717afa42ec1.json',
-        scopes=['https://www.googleapis.com/auth/drive'])
+
+## Access API from local json
+# creds = service_account.Credentials.from_service_account_file('mnpdatabase-ca1a93fefdd6.json',
+#         scopes=['https://www.googleapis.com/auth/drive'])
+
+credentials_dict = json.loads(st.secrets["gcp"]["credentials"])
+creds = service_account.Credentials.from_service_account_info(credentials_dict, scopes=['https://www.googleapis.com/auth/drive'])
 drive_service = build('drive', 'v3', credentials=creds)
 
 
