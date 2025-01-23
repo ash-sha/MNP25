@@ -112,7 +112,7 @@ if st.session_state['authentication_status']:
             # Calculate and display total value if quantity > 0
             if quantity > 0:
                 total_value = quantity * cpu
-                st.text_input(f"₹ ")
+                st.text_input("Total Value", f"₹ {total_value:,}")
             else:
                 total_value = 0  # No value if quantity is 0
 
@@ -120,6 +120,23 @@ if st.session_state['authentication_status']:
             # Read the saved data from Google Drive
             saved_data = read_file(file_id)
 
+            # Dynamic Remaining Funds Display
+            if name:  # Ensure district is selected
+                alloted_fund = district[district["District Name"] == name]["Alloted Budget"].values.tolist()[0]
+                # Calculate remaining funds dynamically based on current inputs (without saving)
+                current_total_cost = saved_data[saved_data["NAME OF THE DISTRICT"] == name]["TOTAL COST"].sum()
+                dynamic_remaining_fund = alloted_fund - (current_total_cost + total_value)
+
+                # Display dynamically
+                st.markdown(f"<h5>Alloted Fund: ₹ <span style='color:black;'>{alloted_fund:,}</span></h5>",
+                            unsafe_allow_html=True)
+                if dynamic_remaining_fund > 0:
+                    fund_color = "green"
+                else:
+                    fund_color = "red"
+                st.markdown(
+                    f"<h5>Remaining Fund (Projected): ₹ <span style='color:{fund_color};'>{dynamic_remaining_fund:,}</span></h5>",
+                    unsafe_allow_html=True, )
 
             # Save button
             if st.button("Save"):
@@ -181,26 +198,22 @@ if st.session_state['authentication_status']:
 
 
             # Display the table below
-            alloted_fund = district[district["District Name"] == name]["Alloted Budget"].values.tolist()[0]
+            st.subheader("Summary")
+            st.dataframe(saved_data[saved_data["NAME OF THE DISTRICT"] == name])
             remaining_fund = alloted_fund - saved_data[saved_data["NAME OF THE DISTRICT"] == name]["TOTAL COST"].sum()
-            st.markdown(f"<h5>Alloted Fund: ₹ <span style='color:black;'>{alloted_fund:,}</span></h5>", unsafe_allow_html=True)
             if remaining_fund > 0:
                 color = "green"
             else:
                 color = "red"
             st.markdown(f"<h5>Remaining Fund: ₹ <span style='color:{color};'>{remaining_fund:,}</span></h5>", unsafe_allow_html=True)
-            st.subheader("Summary")
-            st.dataframe(saved_data[saved_data["NAME OF THE DISTRICT"] == name])
+
 
 
             st.download_button(
                 label="Download Records",
                 data=saved_data.to_csv(index=False).encode('utf-8'),
                 file_name="District Beneficiaries Records.csv",
-                mime="text/csv"
-            )
-
-
+                mime="text/csv")
 
 
 
@@ -209,41 +222,25 @@ if st.session_state['authentication_status']:
             # Initialize session state for checked Aadhaar numbers
             if "checked_aadhar" not in st.session_state:
                 st.session_state["checked_aadhar"] = set()
-
             # Input for Aadhaar Number
             aadhar_no = st.text_input("Enter Aadhaar Number")
-
             if aadhar_no:
-
                 # Check if the Aadhaar number has already been checked
-
                 if aadhar_no in st.session_state["checked_aadhar"]:
-
                     st.warning(f"You have already checked Aadhaar Number {aadhar_no}.")
 
                 else:
-
                     # Add the Aadhaar number to the checked list
-
                     st.session_state["checked_aadhar"].add(aadhar_no)
-
                 # Check if the Aadhaar number exists in the database
-
                 if aadhar_no in public["AADHAR No.1"].astype(str).values:
-
                     Name_b = public[public["AADHAR No.1"] == aadhar_no]["NAME"].values.tolist()[0]
-
                     Art_n = public[public["AADHAR No.1"] == aadhar_no]["BENEFICIARY ITEM"].values.tolist()[0]
-
                     year_p = public[public["AADHAR No.1"] == aadhar_no]["YEAR"].values.tolist()[0]
-
                     st.error(
                         f"Aadhaar Number {aadhar_no} is present in the database. Beneficiary: {Name_b}, Item: {Art_n}, Year: {year_p}.")
-
                 else:
-
                     st.success(f"Aadhaar Number {aadhar_no} is NOT present in the database.")
-
 
 
 
