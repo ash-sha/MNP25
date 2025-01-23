@@ -18,6 +18,7 @@ file_id = "1ry614-7R4-s0uQcv0zrNeS4O0KAbhVEC67rl5_VllGI"  # Replace with your fi
 # creds = service_account.Credentials.from_service_account_file('mnpdatabase-ca1a93fefdd6.json',
 #         scopes=['https://www.googleapis.com/auth/drive'])
 
+## Access via streamlit secrets
 credentials_dict = json.loads(st.secrets["gcp"]["credentials"])
 creds = service_account.Credentials.from_service_account_info(credentials_dict, scopes=['https://www.googleapis.com/auth/drive'])
 drive_service = build('drive', 'v3', credentials=creds)
@@ -129,6 +130,7 @@ if selected_tab == "Input":
                             "COST PER UNIT": cpu,
                         }
                         saved_data = pd.concat([saved_data, pd.DataFrame([new_entry])], ignore_index=True)
+                        saved_data = saved_data.sortby(["NAME OF THE DISTRICT","REQUESTED ARTICLE"]).reset_index(drop=True)
                         st.success("Data saved successfully!")
 
                 # Save to CSV
