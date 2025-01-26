@@ -243,7 +243,10 @@ if st.session_state['authentication_status']:
 
 
 
+
         elif type_choice == "Public":
+
+
             public_data_id = "1sO08BfwN1gzNs_N7XDq1RnqMgJDDKMdq_nsaNhmjKhs"
             public = read_file(public_data_id)
             public_master_id = "1EdEySmYe6ZJUW16f65_q30nkqfbvDADjcmEkAEJrrL4"
@@ -251,12 +254,12 @@ if st.session_state['authentication_status']:
 
             # Initialize session state for checked Aadhaar numbers
             p_choice = st.radio("", ["Validation", "Entry"], horizontal=True)
-            if p_choice == "Validation":
 
+            if p_choice == "Validation":
                 if "checked_aadhar" not in st.session_state:
                     st.session_state["checked_aadhar"] = set()
                 # Input for Aadhaar Number
-                aadhar_no = st.text_input("Enter Aadhaar Number")
+                aadhar_no = st.text_input("Enter Aadhaar Number", key="aadhar_input")
                 if aadhar_no:
                     # Check if the Aadhaar number has already been checked
                     if aadhar_no in st.session_state["checked_aadhar"]:
@@ -275,24 +278,76 @@ if st.session_state['authentication_status']:
                         st.success(f"Aadhaar Number {aadhar_no} is NOT present in the database.")
 
             if p_choice == "Entry":
+                # Input fields for Public data
+                app_no = st.text_input("Application Number (e.g., P 001)", key="app_no_input")
+                aadhar = st.text_input("Aadhaar Number", key="aadhar_entry")
+                name = st.text_input("Name", key="name_input")
+                handicapped = st.radio("Handicapped", options=["Yes", "No"], horizontal=True,
+                                       key="handicapped_input")
+                address = st.text_area("Address", key="address_input")
+                mobile = st.text_input("Mobile Number", key="mobile_input")
+                article_name = st.selectbox("Select Article Name", article["Articles"].unique().tolist(),
+                                            key="article_selectbox")
+                quantity = st.number_input("Quantity", min_value=0, step=1,
+                                           key="quantity_input")  # Allow 0 to delete the record
+                comment = st.text_area("Comments", key="comments_input")
 
-                # Input fields
-                app_no = st.text_input("Application Number (e.g., P 001)")
-                aadhar = st.text_input("Aadhaar Number")
-                name = st.text_input("Name")
-                handicapped = st.radio("Handicapped", options=["Yes", "No"], horizontal=True)
-                address = st.text_area("Address")
-                mobile = st.text_input("Mobile Number")
-                article_name = st.selectbox("Select Article Name", article["Articles"].unique().tolist())
-                quantity = st.number_input("Quantity", min_value=0, step=1,)  # Allow 0 to delete the record
-                comment = st.text_area("Comments")
+                # Select Record to modify or delete
+                selected_record = st.selectbox("Select Application to Modify/Delete",
+                                               public_master["App. No."].unique(), key="select_record")
 
-                # Submit button
-                if st.button("Submit"):
+                # Get the selected record's details for modifying
+                if selected_record:
+                    selected_row = public_master[public_master["App. No."] == selected_record]
+                    app_no = selected_row["App. No."].values[0]
+                    aadhar = selected_row["Aadhar (Without Space)"].values[0]
+                    name = selected_row["Name"].values[0]
+                    handicapped = selected_row["Handicapped (Yes / No)"].values[0]
+                    address = selected_row["Address"].values[0]
+                    mobile = selected_row["Mobile"].values[0]
+                    article_name = selected_row["Article Name"].values[0]
+                    quantity = selected_row["QTY"].values[0]
+                    comment = selected_row["Comments"].values[0]
+
+                # Buttons to Modify or Delete
+                if st.button("Delete", key="delete_button"):
+                    if selected_record:
+                        public_master = public_master[
+                            public_master["App. No."] != selected_record]  # Remove the record
+                        update_file(public_master_id, public_master)
+                        st.success(f"Record for {selected_record} deleted successfully!")
+                    else:
+                        st.error("Please select a record to delete.")
+
+                if st.button("Modify", key="modify_button"):
+                    # Modify the existing record with new values
+                    if selected_record:
+                        modified_entry = {
+                            "App. No.": app_no,
+                            "Aadhar (Without Space)": aadhar,
+                            "Name": name,
+                            "Handicapped (Yes / No)": handicapped,
+                            "Address": address,
+                            "Mobile": mobile,
+                            "Article Name": article_name,
+                            "QTY": quantity,
+                            "Comments": comment
+                        }
+
+                        # Update the record
+                        public_master.loc[
+                            public_master["App. No."] == selected_record, list(modified_entry.keys())] = list(
+                            modified_entry.values())
+                        update_file(public_master_id, public_master)
+                        st.success(f"Record for {selected_record} modified successfully!")
+
+                # Submit button to add a new record
+                if st.button("Add", key="submit_button"):
                     try:
                         # Ensure the columns are of string type for comparison
                         public_master["App. No."] = public_master["App. No."].astype(str)
-                        public_master["Aadhar (Without Space)"] = public_master["Aadhar (Without Space)"].astype(str)
+                        public_master["Aadhar (Without Space)"] = public_master["Aadhar (Without Space)"].astype(
+                            str)
                         # Validate application number and Aadhaar
                         if not app_no:
                             st.warning("Application Number cannot be empty.")
@@ -330,9 +385,9 @@ if st.session_state['authentication_status']:
                             # Success message and updated DataFrame display
                             st.success(f"Application {app_no} added successfully!")
                             st.data_editor(public_master)
+
                     except Exception as e:
                         st.error(f"An error occurred: {str(e)}")
-
 
 
 

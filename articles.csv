@@ -1,71 +1,71 @@
-Articles,Cost per unit
-Handicapped Hand Tricycle,100000
-Fixed Wheel Chair,20500
-Wheelchair,20500
-Handicapped Scooter,20500
-Two Wheeler,20500
-Weed Cutting Machine,20500
-Tree Cutting Machine,20500
-Lenova Tab,20500
-Laptop,20500
-Desktop Computer,20500
-Canon (Xerox),20500
-Colour Printer,20500
-Hp Laser Printer 126 A,20500
-Printer Hp 1108,20500
-Hearing Aid,20500
-Flood Relief Fund,""
-Medical Aid,""
-Educational Aid,""
-Business Aid,""
-"Business Aid, Blind",""
-House Construction,""
-Handicapped Aid,""
-Livelihood Aid,""
-Musical Inst Aid,""
-Environment Aid,""
-Financial Aid,""
-Gp Welding Machine Arc 200,5000
-Bosch Electrician Kit 10 Re,20500
-Bosch Electrician Kit 13 Re,20500
-Electric Iron Box,20500
-Iron Box,20500
-Agri Power Sprayer (1.2 Bolo),20500
-Agri Power Sprayer Knapsak,20500
-Agri Battery Sprayer ,20500
-Agri Manual Sprayer,20500
-Aluminium Vessels Sets,20500
-Aluminium Idli Making Box,20500
-Iron Ms Stove 2 Burner,20500
-Single Burner Stove,20500
-Iron Ms Stove 2 Burner/Idli Box,20500
-Prestige Pressure Cooker,20500
-Surya Gas Stove,20500
-Tiffen Set,20500
-Diamond Cooker 12 Ltrs,20500
-Table Top Tilting Grinder 2 Ltr,20500
-Table Top Wet Grinder 2 Ltr,20500
-Wet Grinder 2 Ltr (Hgt),20500
-Wet Grinder 3 Ltrs,20500
-Wet Grinder 5 Ltrs,20500
-Wet Grinder Floor Model 2 Ltr,20500
-Instant Grinder 30 Kgs,20500
-Push Cart With Top,20500
-Push Cart With Top/Alu. Idli Box,20500
-Push Cart With Top/Tiffen Set,20500
-Push Cart Without Top,20500
-Push Cart Without Top/Iron Box,20500
-Dabara Set (20 Kg ),20500
-Audio Mixer ,20500
-Office Table 4X2,20500
-Pvc Chairs,20500
-Reception 4 Seater,20500
-S Type Chair,20500
-Steel Cupboard,20500
-Panchyath Beneficiaries of 10 Villages around Melmaruvathur,20500
-Sewing Machine Overlock,10000
-Sewing Machine Heavy,20500
-Sewing Machine ORD / Motor,20500
-Sewing Machine ORD,20500
-Gents Cycle,20500
-Girls Cycle,5000
+Articles,Cost per unit,Item Type
+Handicapped Hand Tricycle,100000,Article
+Fixed Wheel Chair,20500,Article
+Wheelchair,20500,Article
+Handicapped Scooter,20500,Article
+Two Wheeler,20500,Article
+Weed Cutting Machine,20500,Article
+Tree Cutting Machine,20500,Article
+Lenova Tab,20500,Article
+Laptop,20500,Article
+Desktop Computer,20500,Article
+Canon (Xerox),20500,Article
+Colour Printer,20500,Article
+Hp Laser Printer 126 A,20500,Article
+Printer Hp 1108,20500,Article
+Hearing Aid,20500,Article
+Flood Relief Fund,"",Project
+Medical Aid,"",Aid
+Educational Aid,"",Aid
+Business Aid,"",Aid
+"Business Aid, Blind","",Aid
+House Construction,"",Project
+Handicapped Aid,"",Aid
+Livelihood Aid,"",Aid
+Musical Inst Aid,"",Aid
+Environment Aid,"",Aid
+Financial Aid,"",Aid
+Gp Welding Machine Arc 200,5000,Article
+Bosch Electrician Kit 10 Re,20500,Article
+Bosch Electrician Kit 13 Re,20500,Article
+Electric Iron Box,20500,Article
+Iron Box,20500,Article
+Agri Power Sprayer (1.2 Bolo),20500,Article
+Agri Power Sprayer Knapsak,20500,Article
+Agri Battery Sprayer ,20500,Article
+Agri Manual Sprayer,20500,Article
+Aluminium Vessels Sets,20500,Article
+Aluminium Idli Making Box,20500,Article
+Iron Ms Stove 2 Burner,20500,Article
+Single Burner Stove,20500,Article
+Iron Ms Stove 2 Burner/Idli Box,20500,Article
+Prestige Pressure Cooker,20500,Article
+Surya Gas Stove,20500,Article
+Tiffen Set,20500,Article
+Diamond Cooker 12 Ltrs,20500,Article
+Table Top Tilting Grinder 2 Ltr,20500,Article
+Table Top Wet Grinder 2 Ltr,20500,Article
+Wet Grinder 2 Ltr (Hgt),20500,Article
+Wet Grinder 3 Ltrs,20500,Article
+Wet Grinder 5 Ltrs,20500,Article
+Wet Grinder Floor Model 2 Ltr,20500,Article
+Instant Grinder 30 Kgs,20500,Article
+Push Cart With Top,20500,Article
+Push Cart With Top/Alu. Idli Box,20500,Article
+Push Cart With Top/Tiffen Set,20500,Article
+Push Cart Without Top,20500,Article
+Push Cart Without Top/Iron Box,20500,Article
+Dabara Set (20 Kg ),20500,Article
+Audio Mixer ,20500,Article
+Office Table 4X2,20500,Article
+Pvc Chairs,20500,Article
+Reception 4 Seater,20500,Article
+S Type Chair,20500,Article
+Steel Cupboard,20500,Article
+Panchyath Beneficiaries of 10 Villages around Melmaruvathur,20500,Article
+Sewing Machine Overlock,10000,Article
+Sewing Machine Heavy,20500,Article
+Sewing Machine ORD / Motor,20500,Article
+Sewing Machine ORD,20500,Article
+Gents Cycle,20500,Article
+Girls Cycle,5000,Article
