@@ -1,77 +1,71 @@
-District Name,Alloted Budget
-Chittor - Rural,590000
-Chittor - Urban,735000
-Hyderabad,10000
-Vijayawada,42000
-Vishakapatinam,20000
-Nellore,24000
-Ariyalur,170000
-Chennai North,300000
-Chennai central,200000
-"Chennai South MS1, 4,5,8,9,13,15,17,24,25,27,28,29 (13 Mandrans)",140000
-NANGANALLUR/MS-4,10208
-CHROMPET/MS-1,9170
-KUNDRATHUR/MS-16,20207
-KUNDRATHUR/MS-17,0
-KUNDRATHUR/MS-18,0
-IYAPPANTHANGAL/MS-9,3025
-SELAIYUR(WOMEN)/MS-13,13450
-TIRISULAM/MS-15,6073
-ALANDUR/MS-2,3966
-VETTUVANGENI/MS-25,3411
-SELAIYUR/MS-3,1520
-ADAMBAKKAM/MS-5,2365
-KATTUPAKKAM/MS-7,17142
-KATTUPAKKAM/MS-7,0
-PALLAVAN KUDIYIRUPPU/MS-11,15734
-KARAPPAKKAM/MS-29,8752
-CHOZHINGANALLUR - II/MS-28,1182
-BHARATHIPURAM/MS-8,1231
-VANAJA NAGAR/MS-24,3572
-NEW PERUNGALATHUR/MS-19,1569
-ANAKAPUTHUR/MS-17,6492
-ANAKAPUTHUR/MS-18,0
-PEERKANKARANAI/MS-17,2156
-POZHICHALUR/MS-10,3716
-CHOZHINGANALLUR - I/MS-27,2558
-chrompet/MS-01,2502
-Coimbatore,420000
-Cuddalore,1200000
-Dharmapuri,1180000
-Dindugal,700000
-Erode,425000
-Kanchipuram,350000
-Kanyakumari,120000
-Karnataka,2000000
-Karur,175000
-Kerala -a.Iduki ,100000
-Kerala -b.Palaghat,100000
-Krishnagiri North,700000
-Krishnagiri South,480000
-Madurai,520000
-Mumbai,60000
-Pune,1700
-Navi mumbai,1500
-Thane,9000
-Namakkal,500000
-Nilgris,100000
-Perambalur,150000
-Puducherry,200000
-Pudukottai,300000
-Ramnad (Raju),375000
-Salem,600000
-Siva Gangai,150000
-Tanjavur,1430000
-Theni,290000
-Tiruchi,370000
-Tirunelveli,310000
-Tirupur,425000
-Tiruvallur,950000
-Tiruvannamalai,875000
-Tuticurion,125000
-Vellore -East,370000
-Vellore -South,530000
-Vellore -North,465000
-Vellore - west,260000
-Villupuram,1500000
-Virudhu nagar,390000
+District Name,Alloted Budget,Code,Name of The President,Cell Number
+Andaman,4000,,R.Gurusamy,9474207828
+Ariyalur,170000,,S.K.Ramachandran,9047414485
+Chengalpattu,,,V.Velu,9444964419
+Chennai Central,200000,,S.Rajasrigoutham,9791109912
+Chennai North,,,M.Vedhavalli,9884113777
+Chennai South,,,Uma Natarajan,8610702389
+Chittoor Rural,590000,,T.Gangadharam,9397050827
+Chittoor Urban,735000,,S.Saritha,9440044327
+Coimbatore,420000,,V.Krishnamurthy,9443937780
+Cuddalore,1200000,,K.Kirubanandan,9345273408
+Dharmapuri Central,1180000,DPC,D.K.Palaniammal,8122541128
+Dharmapuri East,,DPE,S.Kannan,9786992063
+Dharmapuri West,,DPW,P.Sinivasan,9488758041
+Dharmapuri North,,DPN,A.Maadhan,9443052870
+Dharmapuri South,,DPS,D.Jeyamurugan,9442348851
+Dindigul,700000,,R.Subramanian,8608077600
+Erode,425000,,A.Natarajan,9486840705
+Hyderabad,10000,,C.Kaladhar,9440422338
+Kallakurichi,,,K.Shanmugam,9786804330
+Kanchipuram,350000,,D.Devendiran,9976420680
+Kanniyakumari,120000,,R.Selvakumar,9443694125
+Karnataka State,2000000,,Rajagopal,9448682626
+Karur,175000,,N.Jeyachandran,9443185714
+Kerala State,,,M.Sathishkumar,9443386566
+Krishnagiri North-A1,,KNA1,J.Jeyamma,9443057483
+Krishnagiri A2,,KNA2,R.Jaisankar,6385508169
+Krishnagiri-B1,,KNB1,M.Raja,9442437957
+Krishnagiri-B2,,KNB2,V.Bharathi,9488733768
+Krishnagiri-B3,,KNB3,K.Meenatchi,9894209259
+Krishnagiri-C1,,KNC1,B.Govindhan,9655824521
+Krishnagiri-C2,,KNC2,T.Jegadesan,9788878958
+Krishnagiri-D,,KND,K.S.Sundaralakshmi,8248470144
+Krishnagiri south,,,R.Jeyachandran,9500388110
+Madurai,,,P.Asokan,9842198055
+Mumbai,,,S.E.Raju,9594432555
+Namakkal,,,S.Ganesan,9943720389
+Navi Mumbai,,,K.Gnanasekar,9167901393
+Nellore,,,V.V.N.Padmapriya,9441490800
+Nilagiri,,,Indraninatarajan,9894791210
+Perambalur,,,K.Karuppaiah,9443952957
+Pudhucheri,,,A.Muruganandam,9843795226
+Pudhukottai,,,K.Kaliyaperumal,9443837147
+Pune,,,Vaidehi,9422526452
+Ramanathapuram,,,P.Raju,9486561888
+Ranipet,,,R.Mani,9940974200
+Salem,,,S.Chandramohan,9443392212
+Sivagangai,,,R.Kanagasabai,9443177634
+Tenkasi,,,A.Thirumalai,9442050515
+Thane,,,S.S.Mani,9323861970
+Thanjavur,,,B.S.Vasan,9443256395
+Theni,,,Manokaran,9443758195
+Thirunelveli,,,S.Nagarajan,9750930575
+Thiruppur,,,Saraswathy Sadhasivam,9965584826
+Thiruvallur,,,K.Mohanasundari,9790973831
+Thiruvannamalai,,,P.Amaresan,9486711999
+Thothukudi I/C,,,S.Ganapathy Ramasubramanian,7708557476
+Tirupathur,,,A.Sadaanandhan,9443274821
+Trichy,,,Kathiravan,9842032495
+Vellore,,,K.R.Subramanian,9443222963
+Vijayawada,,,B.Sureshkumar,9440528015
+villupuram,,,K.M.Murthy,9486169930
+Virudhunagar,,,R.Padmanaban,9442058894
+Visakapattinam,,,R.Raji,9080224192
+New Delhi-Sudhar Camp,,DL-1,Poongkodi,9315802011
+New Delhi-Shakurpur,,DL-3,Jeyanthi,9717385224
+Madhya Pradesh-Hoshangabad,,MA-1,Sakthi Banumathi,9479592958
+Madhya Pradesh-Bhopal,,MA-2,V.Parvathi,9669430851
+Gujarath-Sabarmathi,,GJ-2,Sekar,9664948365
+Hariyana-Panchkulla-Tamil Colony,,HR-1,Shakti Raj,9888023575
+Melmaruvathur,,,Surendarnath,9840046263

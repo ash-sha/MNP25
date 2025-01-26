@@ -105,7 +105,10 @@ if st.session_state['authentication_status']:
             name = st.selectbox("District Name", district["District Name"].unique().tolist())
             pname = district[district["District Name"]==name]["President Name"].values.tolist()[0]
             pno = str(district[district["District Name"]==name]["Mobile Number"].values.tolist()[0])
-            st.write(f"President Name: {pname}, Mobile Number: {pno}")
+            st.markdown(
+                f"<h5>President Name: <strong>{pname}</strong>, Mobile Number: <strong>{pno}</strong></h5>",
+                unsafe_allow_html=True,
+            )
 
             article_name = st.selectbox("Enter Article Name", article["Articles"].unique().tolist() + ["Add New"])
             #new article
