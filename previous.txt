@@ -106,7 +106,7 @@ if st.session_state['authentication_status']:
             pname = district[district["District Name"]==name]["President Name"].values.tolist()[0]
             pno = str(district[district["District Name"]==name]["Mobile Number"].values.tolist()[0])
             st.markdown(
-                f"<h4>President Name: <strong>{pname}</strong>, Mobile Number: <strong>{pno}</strong></h4>",
+                f"<h5>President Name: <strong>{pname}</strong>, Mobile Number: <strong>{pno}</strong></h5>",
                 unsafe_allow_html=True,
             )
 
@@ -237,11 +237,13 @@ if st.session_state['authentication_status']:
                 st.markdown(f"<h5>Remaining Fund: ₹ <span style='color:{color};'>{remaining_fund:,}</span></h5>", unsafe_allow_html=True)
 
 
+
                 st.download_button(
                     label="Download Records",
                     data=saved_data.to_csv(index=False).encode('utf-8'),
                     file_name="District Beneficiaries Records.csv",
                     mime="text/csv")
+
 
 
         elif type_choice == "Public":
@@ -276,142 +278,66 @@ if st.session_state['authentication_status']:
                         st.success(f"Aadhaar Number {aadhar_no} is NOT present in the database.")
 
             if p_choice == "Entry":
-                # Input fields for adding new details or searching for existing ones
-                st.header("Public Applications")
 
-                # Choose action
-                action = st.radio("Action", options=["Add", "Edit", "Delete"], horizontal=True)
-
-                # Input common fields
+                # Input fields
                 app_no = st.text_input("Application Number (e.g., P 001)")
+                aadhar = st.text_input("Aadhaar Number")
+                name = st.text_input("Name")
+                handicapped = st.radio("Handicapped", options=["Yes", "No"], horizontal=True)
+                address = st.text_area("Address")
+                mobile = st.text_input("Mobile Number")
+                article_name = st.selectbox("Select Article Name", article["Articles"].unique().tolist())
+                quantity = st.number_input("Quantity", min_value=0, step=1,)  # Allow 0 to delete the record
+                comment = st.text_area("Comments")
 
-                if action == "Add":
-                    aadhar = st.text_input("Aadhaar Number")
-                    name = st.text_input("Name")
-                    handicapped = st.radio("Handicapped", options=["Yes", "No"], horizontal=True)
-                    address = st.text_area("Address")
-                    mobile = st.text_input("Mobile Number")
-                    article_name = st.selectbox("Select Article Name", article["Articles"].unique().tolist())
-                    comment = st.text_area("Comments")
-
-                    # Submit button for adding new records
-                    if st.button("Submit"):
-                        try:
-                            # Ensure columns are string type for comparison
-                            public_master["App. No."] = public_master["App. No."].astype(str)
-                            public_master["Aadhar (Without Space)"] = public_master["Aadhar (Without Space)"].astype(
-                                str)
-
-                            # Validate application number and Aadhaar
-                            if not app_no:
-                                st.warning("Application Number cannot be empty.")
-                            elif app_no in public_master["App. No."].values:
-                                st.error("Application Number already added to the Application.")
-                            elif not aadhar:
-                                st.warning("Aadhaar Number cannot be empty.")
-                            elif aadhar in public["AADHAR No.1"].astype(str).values:
-                                st.error("Aadhaar number is already present in the database.")
-                            elif aadhar in public_master["Aadhar (Without Space)"].values:
-                                st.error("Aadhaar Number is already added to an application.")
-                            else:
-                                # Create a new entry
-                                new_entry = {
-                                    "App. No.": app_no,
-                                    "Aadhar (Without Space)": aadhar.astype(str),
-                                    "Name": name,
-                                    "Handicapped (Yes / No)": handicapped,
-                                    "Address": address,
-                                    "Mobile": mobile,
-                                    "Article Name": article_name,
-                                    "Comments": comment
-                                }
-
-                                # Append the new entry to the DataFrame
-                                public_master = pd.concat(
-                                    [public_master, pd.DataFrame([new_entry])],
-                                    ignore_index=True
-                                ).sort_values(by=["App. No."], ascending=True).reset_index(drop=True)
-
-                                # Save the updated data back to the file
-                                update_file(public_master_id, public_master)
-
-                                # Success message and updated DataFrame display
-                                st.success(f"Application {app_no} added successfully!")
-                                st.data_editor(public_master)
-                        except Exception as e:
-                            st.error(f"An error occurred: {str(e)}")
-
-                elif action == "Edit":
-
-                    if st.button("Search", key="search_button"):
-                        # Search for the record by Application Number
-                        record = public_master[public_master["App. No."] == app_no.strip()]
-
-                        if not record.empty:
-                            # Store record in session state for persistence
-                            st.session_state["edit_record"] = record.iloc[0].to_dict()
+                # Submit button
+                if st.button("Submit"):
+                    try:
+                        # Ensure the columns are of string type for comparison
+                        public_master["App. No."] = public_master["App. No."].astype(str)
+                        public_master["Aadhar (Without Space)"] = public_master["Aadhar (Without Space)"].astype(str)
+                        # Validate application number and Aadhaar
+                        if not app_no:
+                            st.warning("Application Number cannot be empty.")
+                        elif app_no in public_master["App. No."].astype(str).values:
+                            st.error("Application Number already exists in the database.")
+                        elif not aadhar:
+                            st.warning("Aadhaar Number cannot be empty.")
+                        elif aadhar in public["AADHAR No.1"].astype(str).values:
+                            st.error("Aadhaar number is already present in the database.")
+                        elif aadhar in public_master["Aadhar (Without Space)"].values:
+                            st.error("Aadhaar Number is already added to an application.")
                         else:
-                            st.error("Application not found.")
+                            # Create a new entry
+                            new_entry = {
+                                "App. No.": app_no,
+                                "Aadhar (Without Space)": aadhar,
+                                "Name": name,
+                                "Handicapped (Yes / No)": handicapped,
+                                "Address": address,
+                                "Mobile": mobile,
+                                "Article Name": article_name,
+                                "QTY": quantity,
+                                "Comments": comment
+                            }
 
-                    if "edit_record" in st.session_state:
-
-                        # Retrieve the stored record from session state
-                        record = st.session_state["edit_record"]
-                        # Display fields for editing
-                        aadhar = st.text_input("Aadhaar Number", value=record["Aadhar (Without Space)"])
-                        name = st.text_input("Name", value=record["Name"])
-                        handicapped = st.radio(
-                            "Handicapped",
-                            options=["Yes", "No"],
-                            horizontal=True,
-                            index=["Yes", "No"].index(record["Handicapped (Yes / No)"]))
-                        address = st.text_area("Address", value=record["Address"])
-                        mobile = st.text_input("Mobile Number", value=record["Mobile"])
-                        article_name = st.selectbox("Select Article Name",
-                            article["Articles"].unique().tolist(),
-                            index=article["Articles"].tolist().index(record["Article Name"]))
-                        comment = st.text_area("Comments", value=record["Comments"])
-
-                        if st.button("Update", key="update_button"):
-                            try:
-                                # Update the record in the DataFrame
-                                public_master.loc[public_master["App. No."] == app_no, "Aadhar (Without Space)"] = aadhar
-                                public_master.loc[public_master["App. No."] == app_no, "Name"] = name
-                                public_master.loc[public_master["App. No."] == app_no, "Handicapped (Yes / No)"] = handicapped
-                                public_master.loc[public_master["App. No."] == app_no, "Address"] = address
-                                public_master.loc[public_master["App. No."] == app_no, "Mobile"] = mobile
-                                public_master.loc[public_master["App. No."] == app_no, "Article Name"] = article_name
-                                public_master.loc[public_master["App. No."] == app_no, "Comments"] = comment
-
-                                # Save the updated data back to the file
-                                update_file(public_master_id, public_master)
-                                st.success(f"Application {app_no} updated successfully!")
-                                st.session_state.pop("edit_record")  # Clear session state after update
-                                st.dataframe(public_master)
-                            except Exception as e:
-                                st.error(f"An error occurred: {str(e)}")
-
-
-                elif action == "Delete":
-                    if st.button("Delete"):
-                        # Check if the record exists
-                        if app_no in public_master["App. No."].values:
-                            # Delete the record
-                            public_master = public_master[public_master["App. No."] != app_no]
+                            # Append the new entry to the DataFrame
+                            public_master = pd.concat(
+                                [public_master, pd.DataFrame([new_entry])],
+                                ignore_index=True
+                            ).sort_values(by=["App. No."], ascending=True).reset_index(drop=True)
 
                             # Save the updated data back to the file
                             update_file(public_master_id, public_master)
 
-                            st.success(f"Application {app_no} deleted successfully!")
-                        else:
-                            st.error("Application not found.")
-                    st.dataframe(public_master)
+                            # Success message and updated DataFrame display
+                            st.success(f"Application {app_no} added successfully!")
+                            st.data_editor(public_master)
+                    except Exception as e:
+                        st.error(f"An error occurred: {str(e)}")
 
-            st.download_button(
-                label="Download Records",
-                data=public_master.to_csv(index=False).encode('utf-8'),
-                file_name="Public Beneficiaries Records.csv",
-                mime="text/csv")
+
+
 
 
 elif st.session_state['authentication_status'] is False:
