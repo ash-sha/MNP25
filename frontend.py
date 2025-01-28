@@ -249,22 +249,31 @@ if st.session_state['authentication_status']:
             public = read_file(public_data_id)
             public_master_id = "1EdEySmYe6ZJUW16f65_q30nkqfbvDADjcmEkAEJrrL4"
             public_master = read_file(public_master_id)
+            public_master["Aadhar (Without Space)"] = public_master["Aadhar (Without Space)"].astype(str)
+            checked_id = "1X12wSEFnt7mivh5dysPSnH4nVZZPfPJgWBUk3e_oO7c"
+            check_file = read_file(checked_id)
 
             # Initialize session state for checked Aadhaar numbers
             p_choice = st.radio("", ["Validation", "Entry"], horizontal=True)
             if p_choice == "Validation":
 
-                if "checked_aadhar" not in st.session_state:
-                    st.session_state["checked_aadhar"] = set()
-                # Input for Aadhaar Number
+                # if "checked_aadhar" not in st.session_state:
+                #     st.session_state["checked_aadhar"] = set()
+                # # Input for Aadhaar Number
                 aadhar_no = st.text_input("Enter Aadhaar Number")
                 if aadhar_no:
-                    # Check if the Aadhaar number has already been checked
-                    if aadhar_no in st.session_state["checked_aadhar"]:
+                    # # Check if the Aadhaar number has already been checked
+                    # if aadhar_no in st.session_state["checked_aadhar"]:
+                    #     st.warning(f"You have already checked Aadhaar Number {aadhar_no}.")
+                    # else:
+                    #     # Add the Aadhaar number to the checked list
+                    #     st.session_state["checked_aadhar"].add(aadhar_no)
+                    if aadhar_no in check_file["checked_aadhar_no"].astype(str).values:
                         st.warning(f"You have already checked Aadhaar Number {aadhar_no}.")
                     else:
-                        # Add the Aadhaar number to the checked list
-                        st.session_state["checked_aadhar"].add(aadhar_no)
+                        check_file = pd.concat([check_file, pd.DataFrame([{"checked_aadhar_no":str(aadhar_no)}])], ignore_index=True)
+                        update_file(checked_id,check_file)
+
                     # Check if the Aadhaar number exists in the database
                     if aadhar_no in public["AADHAR No.1"].astype(str).values:
                         Name_b = public[public["AADHAR No.1"] == aadhar_no]["NAME"].values.tolist()[0]
@@ -297,11 +306,6 @@ if st.session_state['authentication_status']:
                     # Submit button for adding new records
                     if st.button("Submit"):
                         try:
-                            # Ensure columns are string type for comparison
-                            public_master["App. No."] = public_master["App. No."].astype(str)
-                            public_master["Aadhar (Without Space)"] = public_master["Aadhar (Without Space)"].astype(
-                                str)
-
                             # Validate application number and Aadhaar
                             if not app_no:
                                 st.warning("Application Number cannot be empty.")
@@ -317,7 +321,7 @@ if st.session_state['authentication_status']:
                                 # Create a new entry
                                 new_entry = {
                                     "App. No.": app_no,
-                                    "Aadhar (Without Space)": aadhar.astype(str),
+                                    "Aadhar (Without Space)": str(aadhar),
                                     "Name": name,
                                     "Handicapped (Yes / No)": handicapped,
                                     "Address": address,
@@ -327,9 +331,7 @@ if st.session_state['authentication_status']:
                                 }
 
                                 # Append the new entry to the DataFrame
-                                public_master = pd.concat(
-                                    [public_master, pd.DataFrame([new_entry])],
-                                    ignore_index=True
+                                public_master = pd.concat([public_master, pd.DataFrame([new_entry])],ignore_index=True
                                 ).sort_values(by=["App. No."], ascending=True).reset_index(drop=True)
 
                                 # Save the updated data back to the file
@@ -391,7 +393,6 @@ if st.session_state['authentication_status']:
                             except Exception as e:
                                 st.error(f"An error occurred: {str(e)}")
 
-
                 elif action == "Delete":
                     if st.button("Delete"):
                         # Check if the record exists
@@ -407,11 +408,11 @@ if st.session_state['authentication_status']:
                             st.error("Application not found.")
                     st.dataframe(public_master)
 
-            st.download_button(
-                label="Download Records",
-                data=public_master.to_csv(index=False).encode('utf-8'),
-                file_name="Public Beneficiaries Records.csv",
-                mime="text/csv")
+                st.download_button(
+                    label="Download Records",
+                    data=public_master.to_csv(index=False).encode('utf-8'),
+                    file_name="Public Beneficiaries Records.csv",
+                    mime="text/csv")
 
 
 elif st.session_state['authentication_status'] is False:
