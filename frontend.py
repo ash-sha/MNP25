@@ -102,20 +102,19 @@ if st.session_state['authentication_status']:
         if type_choice == "District":
 
             # Input fields
-            name = st.selectbox("District Name", district["District Name"].unique().tolist())
+            name = st.selectbox("District Name*", district["District Name"].unique().tolist())
             pname = district[district["District Name"]==name]["President Name"].values.tolist()[0]
             pno = str(district[district["District Name"]==name]["Mobile Number"].values.tolist()[0])
             st.markdown(
-                f"<h4>President Name: <strong>{pname}</strong>, Mobile Number: <strong>{pno}</strong></h4>",
-                unsafe_allow_html=True,
-            )
+                f"<h4>President: <strong>{pname}</strong>, Mobile: <strong>{pno}</strong></h4>",
+                unsafe_allow_html=True,)
 
-            article_name = st.selectbox("Enter Article Name", article["Articles"].unique().tolist() + ["Add New"])
+            article_name = st.selectbox("Enter Article Name*", article["Articles"].unique().tolist() + ["Add New"])
             #new article
             if article_name == "Add New":
-                new_article =  st.text_input("Enter Article Name")
+                new_article =  st.text_input("Enter Article Name*")
                 if new_article:
-                    new_cpu = st.number_input("Enter Cost Per Unit", min_value=0)
+                    new_cpu = st.number_input("Enter Cost Per Unit*", min_value=0)
                     new_item_type = st.radio("Select Type", ["Article", "Aid", "Project"], horizontal=True)
                     if st.button("Save Article"):
                         new_article_entry = {
@@ -130,17 +129,15 @@ if st.session_state['authentication_status']:
             else:
 
                 cpu = st.number_input("Cost Per Unit",value = article[article["Articles"] == article_name]["Cost per unit"].tolist()[0],disabled=True)
-                quantity = st.number_input("Quantity", min_value=0, step=1)  # Allow 0 to delete the record
+                quantity = st.number_input("Quantity*", min_value=0, step=1)  # Allow 0 to delete the record
 
-                # Calculate and display total value if quantity > 0
-                if quantity > 0:
-                    total_value = quantity * cpu
-                    st.text_input("Total Value", f"₹ {total_value:,}")
-                else:
-                    total_value = 0  # No value if quantity is 0
 
-                comment = st.text_area("Enter Comment")
+                # Auto-calculate total value
+                default_total_value = quantity * cpu
+                # Allow user to edit if needed (pre-filled with the calculated value)
+                total_value = st.number_input("Total Value", value=default_total_value, min_value=0)
 
+                comment = st.text_area("Enter Comment* (Add 'No' if Nothing)",placeholder="Must for Aid and Projects",value="No")
                 # Read the saved data from Google Drive
                 saved_data = read_file(master_data_id)
 
@@ -172,7 +169,8 @@ if st.session_state['authentication_status']:
                             # Find and remove the selected row from the DataFrame
                             delete_condition = (
                                 (saved_data["NAME OF THE DISTRICT"] == name) &
-                                (saved_data["REQUESTED ARTICLE"] == article_name)
+                                (saved_data["REQUESTED ARTICLE"] == article_name) &
+                                (saved_data["COMMENTS"] == comment)
                             )
                             saved_data = saved_data[~delete_condition]  # Remove the record
                             alert2 = st.success(f"Record for {name} and {article_name} deleted successfully!")
@@ -183,7 +181,8 @@ if st.session_state['authentication_status']:
                             # Check for duplicates and replace if necessary
                             duplicate_condition = (
                                 (saved_data["NAME OF THE DISTRICT"] == name) &
-                                (saved_data["REQUESTED ARTICLE"] == article_name)
+                                (saved_data["REQUESTED ARTICLE"] == article_name) &
+                                (saved_data["COMMENTS"] == comment)
                             )
                             if duplicate_condition.any():
                                 saved_data.loc[duplicate_condition, ["QUANTITY", "TOTAL COST"]] = [quantity, total_value]
@@ -197,7 +196,7 @@ if st.session_state['authentication_status']:
                                     "REQUESTED ARTICLE": article_name,
                                     "QUANTITY": quantity,
                                     "TOTAL COST": total_value,
-                                    "COST PER UNIT": cpu,
+                                    "COST PER UNIT": total_value if cpu == 0 else cpu,
                                     "COMMENTS":comment,
                                     "ITEM TYPE": article[article["Articles"] == article_name]["Item Type"].tolist()[0],
                                 }
