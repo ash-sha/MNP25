@@ -105,10 +105,7 @@ if st.session_state['authentication_status']:
             name = st.selectbox("District Name*", district["District Name"].unique().tolist())
             pname = district[district["District Name"]==name]["President Name"].values.tolist()[0]
             pno = str(district[district["District Name"]==name]["Mobile Number"].values.tolist()[0])
-            st.markdown(
-                f"<h4>President: <strong>{pname}</strong>, Mobile: <strong>{pno}</strong></h4>",
-                unsafe_allow_html=True,)
-
+            st.markdown(f"<h4>President: <b>{pname}</b>, Mobile: <b>{pno}</b></h4>",unsafe_allow_html=True,)
             article_name = st.selectbox("Enter Article Name*", article["Articles"].unique().tolist() + ["Add New"])
             #new article
             if article_name == "Add New":
@@ -122,20 +119,31 @@ if st.session_state['authentication_status']:
                             "Cost per unit": new_cpu,
                             "Item Type": new_item_type,
                         }
-                        new_article_data = pd.concat([article, pd.DataFrame([new_article_entry])], ignore_index=True).reset_index(drop=True)
+                        new_article_data = pd.concat([article, pd.DataFrame([new_article_entry])], ignore_index=True).sort_values(by=["Articles"],ascending=True).reset_index(drop=True)
                         new_article_data.drop_duplicates(subset=["Articles"], inplace=True)
                         update_file(article_data_id, new_article_data)
 
             else:
 
                 cpu = st.number_input("Cost Per Unit",value = article[article["Articles"] == article_name]["Cost per unit"].tolist()[0],disabled=True)
-                quantity = st.number_input("Quantity*", min_value=0, step=1)  # Allow 0 to delete the record
 
+                # Retrieve existing quantity for the selected district and article
+                saved_data = read_file(master_data_id)
+                existing_record = saved_data[
+                    (saved_data["NAME OF THE DISTRICT"] == name) &
+                    (saved_data["REQUESTED ARTICLE"] == article_name)
+                    ]
+
+                # Set default quantity to existing value if record exists, else 0
+                default_quantity = existing_record["QUANTITY"].values[0] if not existing_record.empty else 0
+
+                # Input field for quantity with default value
+                quantity = st.number_input( "Quantity*",min_value=0,step=1, value=default_quantity)
 
                 # Auto-calculate total value
                 default_total_value = quantity * cpu
                 # Allow user to edit if needed (pre-filled with the calculated value)
-                total_value = st.number_input("Total Value", value=default_total_value, min_value=0)
+                total_value = st.number_input("Total Value", value=default_total_value, min_value=0,disabled = (cpu != 0))
 
                 comment = st.text_area("Enter Comment* (Add 'No' if Nothing)",placeholder="Must for Aid and Projects",value="No")
                 # Read the saved data from Google Drive
@@ -185,9 +193,9 @@ if st.session_state['authentication_status']:
                                 (saved_data["COMMENTS"] == comment)
                             )
                             if duplicate_condition.any():
-                                saved_data.loc[duplicate_condition, ["QUANTITY", "TOTAL COST"]] = [quantity, total_value]
+                                saved_data.loc[duplicate_condition, ["QUANTITY", "COST PER UNIT","TOTAL COST"]] = [quantity, total_value/quantity if cpu == 0 else cpu, total_value]
                                 alert3 = st.info("Duplicate entry found. Existing record updated.")
-                                time.sleep(1)
+                                time.sleep(2)
                                 alert3.empty()
 
                             else:
@@ -196,7 +204,7 @@ if st.session_state['authentication_status']:
                                     "REQUESTED ARTICLE": article_name,
                                     "QUANTITY": quantity,
                                     "TOTAL COST": total_value,
-                                    "COST PER UNIT": total_value if cpu == 0 else cpu,
+                                    "COST PER UNIT": total_value/quantity if cpu == 0 else cpu,
                                     "COMMENTS":comment,
                                     "ITEM TYPE": article[article["Articles"] == article_name]["Item Type"].tolist()[0],
                                 }
