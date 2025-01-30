@@ -425,6 +425,6 @@ if st.session_state['authentication_status']:
 elif st.session_state['authentication_status'] is False:
     st.error('Username/password is incorrect')
 elif st.session_state['authentication_status'] is None:
-    alert5 = st.warning('Please enter your username and password')
+    alert5 = st.info('Please enter your username and password')
     time.sleep(1)
     alert5.empty()
