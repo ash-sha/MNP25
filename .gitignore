@@ -6,3 +6,5 @@ saved_data.csv
 .streamlit/secrets.toml
 mnpdatabase-ca1a93fefdd6.json
 data/mnpdatabase-ca1a93fefdd6.json
+codes/.streamlit
+codes/.streamlit/secrets.toml
