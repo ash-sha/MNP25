@@ -94,7 +94,7 @@ if st.session_state['authentication_status']:
 
 
     # Sidebar Navigation
-    selected_tab = st.sidebar.radio("Select Tab", ["Beneficiary Entry"])
+    selected_tab = st.sidebar.radio("Select Tab", ["Beneficiary Entry","Manage Articles"])
 
     if selected_tab == "Beneficiary Entry":
         # Radio buttons to select type
@@ -102,156 +102,288 @@ if st.session_state['authentication_status']:
 
         if type_choice == "District":
 
-            # Input fields
-            name = st.selectbox("District Name*", district["District Name"].unique().tolist())
-            pname = district[district["District Name"]==name]["President Name"].values.tolist()[0]
-            pno = str(district[district["District Name"]==name]["Mobile Number"].values.tolist()[0])
-            st.markdown(f"<h4>President: <b>{pname}</b>, Mobile: <b>{pno}</b></h4>",unsafe_allow_html=True,)
-            article_name = st.selectbox("Enter Article Name*", article["Articles"].unique().tolist() + ["Add New"])
-            #new article
-            if article_name == "Add New":
-                new_article =  st.text_input("Enter Article Name*")
-                if new_article:
-                    new_cpu = st.number_input("Enter Cost Per Unit*", min_value=0)
-                    new_item_type = st.radio("Select Type", ["Article", "Aid", "Project"], horizontal=True)
-                    if st.button("Save Article"):
-                        new_article_entry = {
-                            "Articles": new_article,
-                            "Cost per unit": new_cpu,
-                            "Item Type": new_item_type,
-                        }
-                        new_article_data = pd.concat([article, pd.DataFrame([new_article_entry])], ignore_index=True).sort_values(by=["Articles"],ascending=True).reset_index(drop=True)
-                        new_article_data.drop_duplicates(subset=["Articles"], inplace=True)
-                        update_file(article_data_id, new_article_data)
+            # Streamlit UI
+            st.header("District Requests")
+            saved_data = read_file(master_data_id)
 
-            else:
-                cpu = st.number_input("Cost Per Unit",value = article[article["Articles"] == article_name]["Cost per unit"].tolist()[0],disabled=True)
 
-                # Retrieve existing quantity for the selected district and article
-                saved_data = read_file(master_data_id)
-                existing_record = saved_data[
-                    (saved_data["NAME OF THE DISTRICT"] == name) &
-                    (saved_data["REQUESTED ARTICLE"] == article_name)
-                    ]
+            # Function to reset form fields
+            def reset_form():
+                st.session_state.clear()
+                st.session_state["district_name"] = ""
+                st.session_state["selected_articles"] = []
+                st.session_state["article_comments"] = {}
 
-                # Set default quantity to existing value if record exists, else 0
-                default_quantity = existing_record["QUANTITY"].values[0] if not existing_record.empty else 0
 
-                # Input field for quantity with default value
-                quantity = st.number_input( "Quantity* (0 to delete)",min_value=0,step=1, value=default_quantity)
+            # Initialize session state for form fields if not already set
+            if "district_name" not in st.session_state:
+                reset_form()
 
-                # Auto-calculate total value
-                default_total_value = quantity * cpu
-                # Allow user to edit if needed (pre-filled with the calculated value)
-                total_value = st.number_input("Total Value", value=default_total_value, min_value=0,disabled = (cpu != 0))
+            # User action selection
+            action = st.radio("Select Action", ["Add", "Edit", "Delete"], horizontal=True)
 
-                comment = st.text_area("Enter Comment* (Add 'No' if Nothing)",placeholder="Must for Aid and Projects",value="No")
-                # Read the saved data from Google Drive
-                saved_data = read_file(master_data_id)
+            if action == "Add":
 
-                # Dynamic Remaining Funds Display
-                if name:  # Ensure district is selected
-                    alloted_fund = district[district["District Name"] == name]["Alloted Budget"].values.tolist()[0]
-                    # Calculate remaining funds dynamically based on current inputs (without saving)
-                    current_total_cost = saved_data[saved_data["NAME OF THE DISTRICT"] == name]["TOTAL COST"].sum()
-                    dynamic_remaining_fund = alloted_fund - (current_total_cost + total_value)
+                # District Name
+                st.session_state["district_name"] = st.selectbox(
+                    "District Name*",
+                    district["District Name"].tolist(),
+                    index=0 if not st.session_state["district_name"] else district["District Name"].tolist().index(
+                        st.session_state["district_name"])
+                )
+                pname = district[district["District Name"] == st.session_state["district_name"]]["President Name"].values.tolist()[0]
+                pno = str(district[district["District Name"] == st.session_state["district_name"]]["Mobile Number"].values.tolist()[0])
+                st.markdown(f"<h4>President: <b>{pname}</b>, Mobile: <b>{pno}</b></h4>", unsafe_allow_html=True, )
 
-                    # Display dynamically
-                    st.markdown(f"<h5>Alloted Fund: ₹ <span style='color:black;'>{alloted_fund:,}</span></h5>",
-                                unsafe_allow_html=True)
-                    if dynamic_remaining_fund > 0:
-                        fund_color = "green"
-                    else:
-                        fund_color = "red"
-                    st.markdown(
-                        f"<h5>Remaining Fund (Projected): ₹ <span style='color:{fund_color};'>{dynamic_remaining_fund:,}</span></h5>",
-                        unsafe_allow_html=True, )
+                # Article Selection
+                st.session_state["selected_articles"] = st.multiselect(
+                    "Select Articles*",
+                    article["Articles"].tolist(),
+                    default=st.session_state["selected_articles"]
+                )
 
-                # Save button
-                if st.button("Submit"):
-                    if not name or not article_name:
-                        st.warning("Please fill all fields before saving.")
-                    else:
-                        # Check if quantity is 0 (delete the record)
-                        if quantity == 0:
-                            # Find and remove the selected row from the DataFrame
-                            delete_condition = (
-                                (saved_data["NAME OF THE DISTRICT"] == name) &
-                                (saved_data["REQUESTED ARTICLE"] == article_name) &
-                                (saved_data["COMMENTS"] == comment)
+                # Article Details
+                article_entries = []
+                article_comments = {}
+
+                for article_name in st.session_state["selected_articles"]:
+                    col1, col2, col3, col4 = st.columns(4)
+
+                    with col1:
+                        # Use a unique key by combining article name and district name
+                        quantity = st.number_input(
+                            f"Quantity of {article_name}*",
+                            min_value=1,
+                            step=1,
+                            key=f"qty_{article_name}_{st.session_state['district_name']}"  # Unique key
+                        )
+                    cost_per_unit = article.loc[article["Articles"] == article_name, "Cost per unit"].values[0]
+
+                    with col2:
+                        st.write(f"Cost per Unit: ₹{cost_per_unit}")
+
+                    with col3:
+                        if cost_per_unit == 0:
+                            total_value = st.number_input(
+                                f"Total Value for {article_name}*",
+                                min_value=0,
+                                step=1,
+                                key=f"total_value_{article_name}_{st.session_state['district_name']}"
                             )
-                            saved_data = saved_data[~delete_condition]  # Remove the record
-                            alert2 = st.success(f"Record for {name} and {article_name} deleted successfully!")
-                            time.sleep(1)
-                            alert2.empty()
-
                         else:
-                            # Check for duplicates and replace if necessary
-                            duplicate_condition = (
-                                (saved_data["NAME OF THE DISTRICT"] == name) &
-                                (saved_data["REQUESTED ARTICLE"] == article_name) &
-                                (saved_data["COMMENTS"] == comment)
+                            total_value = quantity * cost_per_unit
+                            st.write(f"Total: ₹{total_value}")
+
+                    with col4:
+                        comment = st.text_area(
+                            f"Comment for {article_name}",
+                            key=f"comment_{article_name}_{st.session_state['district_name']}",  # Unique key
+                            value="No", height=68
+                        )
+                        article_comments[article_name] = comment
+
+                    article_entries.append({
+                        "NAME OF THE DISTRICT": st.session_state["district_name"],
+                        "REQUESTED ARTICLE": article_name,
+                        "QUANTITY": quantity,
+                        "COST PER UNIT": total_value / quantity if cost_per_unit == 0 else cost_per_unit,
+                        "TOTAL COST": total_value,
+                        "COMMENTS": article_comments[article_name],
+                        "ITEM TYPE": article[article["Articles"] == article_name]["Item Type"].tolist()[0],
+                        "Beneficiary Type": "District",
+                    })
+
+                # Submit Button for new requests
+                if st.button("Add"):
+                    if not st.session_state["district_name"] or not st.session_state["selected_articles"]:
+                        st.error("Please fill all required fields (*) before submitting.")
+                    else:
+                        # Check for duplicate entries (same District Name, Article Name, and Comments)
+                        duplicate_entries = []
+
+                        for entry in article_entries:
+                            duplicate = saved_data[
+                                (saved_data["NAME OF THE DISTRICT"] == entry["NAME OF THE DISTRICT"]) &
+                                (saved_data["REQUESTED ARTICLE"] == entry["REQUESTED ARTICLE"]) &
+                                (saved_data["COMMENTS"] == entry["COMMENTS"])
+                                ]
+                            if not duplicate.empty:
+                                duplicate_entries.append(entry["REQUESTED ARTICLE"])
+
+                        if duplicate_entries:
+                            st.error(
+                                f"Duplicate entries found: {', '.join(duplicate_entries)}. Please modify the comments or remove duplicates.")
+                        else:
+                            # Flatten the article entries into individual rows
+                            flattened_articles = []
+
+                            for entry in article_entries:
+                                flattened_articles.append({
+                                    "NAME OF THE DISTRICT": entry["NAME OF THE DISTRICT"],
+                                    "REQUESTED ARTICLE": entry["REQUESTED ARTICLE"],
+                                    "QUANTITY": entry["QUANTITY"],
+                                    "COST PER UNIT": entry["COST PER UNIT"],
+                                    "TOTAL COST": entry["TOTAL COST"],
+                                    "COMMENTS": entry["COMMENTS"],
+                                    "ITEM TYPE": entry["ITEM TYPE"],
+                                    "Beneficiary Type": entry["Beneficiary Type"],
+                                })
+
+                            # Convert the flattened articles into a DataFrame
+                            flattened_df = pd.DataFrame(flattened_articles)
+
+                            # Append the new flattened data to the existing data
+                            saved_data = pd.concat([saved_data, flattened_df], ignore_index=True).sort_values(
+                                by=["NAME OF THE DISTRICT", "REQUESTED ARTICLE"], ascending=True).reset_index(drop=True)
+
+                            # Save the updated data back to storage
+                            update_file(master_data_id, saved_data)
+
+                            # Clear form fields after successful submission
+                            reset_form()
+
+                            # Success message
+                            st.success("Request submitted successfully!")
+                            st.dataframe(saved_data[saved_data["NAME OF THE DISTRICT"] == entry["NAME OF THE DISTRICT"]])
+
+
+
+            elif action == "Edit":
+
+                if not saved_data.empty:
+                    district_names = saved_data["NAME OF THE DISTRICT"].unique()
+                    selected_district_name = st.selectbox("Select District Name to Edit", district_names)
+                    # Filter only the relevant data
+                    selected_entries = saved_data[saved_data["NAME OF THE DISTRICT"] == selected_district_name]
+                    st.write("Edit the selected entries:")
+
+
+                    article_entries = []
+                    modified_indices = []  # Track which entries are modified
+
+                    for index, row in selected_entries.iterrows():
+                        col1, col2, col3, col4 = st.columns(4)
+                        with col1:
+                            quantity = st.number_input(
+                                f"Quantity of {row['REQUESTED ARTICLE']}*", min_value=1, step=1,
+                                value=int(row["QUANTITY"]),
+                                key=f"qty_{row['REQUESTED ARTICLE']}_{selected_district_name}_{index}"
                             )
-                            if duplicate_condition.any():
-                                saved_data.loc[duplicate_condition, ["QUANTITY", "COST PER UNIT","TOTAL COST"]] = [quantity, total_value/quantity if cpu == 0 else cpu, total_value]
-                                alert3 = st.info("Duplicate entry found. Existing record updated.")
-                                time.sleep(2)
-                                alert3.empty()
+
+                        cost_per_unit = article.loc[article["Articles"] == row["REQUESTED ARTICLE"], "Cost per unit"].values[0]
+
+                        with col2:
+                            st.write(f"Cost per Unit: ₹{cost_per_unit}")
+
+                        with col3:
+                            if cost_per_unit == 0:
+
+                                total_value = st.number_input(
+                                    f"Total Value for {row['REQUESTED ARTICLE']}*", min_value=0.0, step=1.0,
+                                    value=float(row["TOTAL COST"]),
+                                    key=f"total_value_{row['REQUESTED ARTICLE']}_{selected_district_name}_{index}"
+                                )
 
                             else:
-                                new_entry = {
-                                    "NAME OF THE DISTRICT": name,
-                                    "REQUESTED ARTICLE": article_name,
-                                    "QUANTITY": quantity,
-                                    "TOTAL COST": total_value,
-                                    "COST PER UNIT": total_value/quantity if cpu == 0 else cpu,
-                                    "COMMENTS":comment,
-                                    "ITEM TYPE": article[article["Articles"] == article_name]["Item Type"].tolist()[0],
-                                }
+                                total_value = quantity * cost_per_unit
+                                st.write(f"Total: ₹{total_value}")
 
-                                saved_data = pd.concat([saved_data, pd.DataFrame([new_entry])], ignore_index=True).sort_values(by=["NAME OF THE DISTRICT","REQUESTED ARTICLE"],ascending=True).reset_index(drop=True)
+                        with col4:
+                            comment = st.text_area(
+                                f"Comment for {row['REQUESTED ARTICLE']}",
+                                key=f"comment_{row['REQUESTED ARTICLE']}_{selected_district_name}_{index}",
+                                value=row["COMMENTS"], height=68
+                            )
 
-                        alloted_fund = district[district["District Name"] == name]["Alloted Budget"].values.tolist()[0]
-                        remaining_fund = alloted_fund - saved_data[saved_data["NAME OF THE DISTRICT"] == name]["TOTAL COST"].sum()
-                        try:
-                            last_row_index = saved_data[saved_data["NAME OF THE DISTRICT"] == name].index[-1]
-                            first_row_index = saved_data[saved_data["NAME OF THE DISTRICT"] == name].index[0]
+                        # Track modifications
+                        if (quantity != row["QUANTITY"] or total_value != row["TOTAL COST"] or
+                                comment != row["COMMENTS"]
+                        ):
+                            modified_indices.append(index)  # Store modified index
 
-                            # Add 'ALLOTTED FUND' and 'REMAINING FUND' to the last row
-                            saved_data.loc[saved_data["NAME OF THE DISTRICT"] == name, ["ALLOTTED FUNDS","EXCESS/SHORTAGE"]] = None
-                            saved_data.loc[first_row_index, "ALLOTTED FUNDS"] = alloted_fund
-                            saved_data.loc[last_row_index, "EXCESS/SHORTAGE"] = remaining_fund
-                        except IndexError:
-                            pass
+                        article_entries.append({
+                            "INDEX": index,  # Store index to track which ones to update
+                            "NAME OF THE DISTRICT": selected_district_name,
+                            "REQUESTED ARTICLE": row["REQUESTED ARTICLE"],
+                            "QUANTITY": quantity,
+                            "COST PER UNIT": total_value / quantity if cost_per_unit == 0 else cost_per_unit,
+                            "TOTAL COST": total_value,
+                            "COMMENTS": comment,
+                            "ITEM TYPE": article[article["Articles"] == row["REQUESTED ARTICLE"]]["Item Type"].tolist()[
+                                0],
+                            "Beneficiary Type": "District",
+                        })
 
-                        saved_data = saved_data.reset_index(drop=True)
-                        alert4 = st.success("Data saved successfully!")
-                        time.sleep(1)
-                        alert4.empty()
+                    if st.button("Update"):
 
-                        # Save to CSV
+                        for entry in article_entries:
+                            if entry["INDEX"] in modified_indices:
+                                saved_data.loc[entry["INDEX"], "QUANTITY"] = entry["QUANTITY"]
+                                saved_data.loc[entry["INDEX"], "TOTAL COST"] = entry["TOTAL COST"]
+                                saved_data.loc[entry["INDEX"], "COMMENTS"] = entry["COMMENTS"]
+                                saved_data.loc[entry["INDEX"], "COST PER UNIT"] = entry["COST PER UNIT"]
+
+                        # 🔹 **Save changes to storage**
                         update_file(master_data_id, saved_data)
+                        st.success("Request updated successfully!")
+                        st.dataframe(saved_data[saved_data["NAME OF THE DISTRICT"] == selected_district_name])
 
-
-                # Display the table below
-                st.subheader("Summary")
-                st.dataframe(saved_data[saved_data["NAME OF THE DISTRICT"] == name])
-                remaining_fund = alloted_fund - saved_data[saved_data["NAME OF THE DISTRICT"] == name]["TOTAL COST"].sum()
-                if remaining_fund > 0:
-                    color = "green"
                 else:
-                    color = "red"
-                st.markdown(f"<h5>Remaining Fund: ₹ <span style='color:{color};'>{remaining_fund:,}</span></h5>", unsafe_allow_html=True)
+                    st.write("No entries available to edit.")
 
 
-                st.download_button(
-                    label="Download Records",
-                    data=saved_data.to_csv(index=False).encode('utf-8'),
-                    file_name="District Beneficiaries Records.csv",
-                    mime="text/csv")
+
+            elif action == "Delete":
+                # Select an entry to delete
+                if not saved_data.empty:
+                    district_names = saved_data["NAME OF THE DISTRICT"].unique()
+                    selected_district_name = st.selectbox("Select District Name to Delete", district_names)
+
+                    # Filter the data for the selected district name
+                    selected_entries = saved_data[saved_data["NAME OF THE DISTRICT"] == selected_district_name]
+
+                    # Add a checkbox for each record to allow selection
+                    st.write("Select records to delete:")
+
+                    delete_indices = []
+                    for index, row in selected_entries.iterrows():
+                        if st.checkbox(
+                                f"Delete {row['REQUESTED ARTICLE']} (Qty: {row['QUANTITY']}, Total: ₹{row['TOTAL COST']}, Comments: {row['COMMENTS']})",
+                                key=f"delete_{index}"):
+                            delete_indices.append(index)
+
+                    # Delete Button
+                    if st.button("Delete Selection"):
+                        if not delete_indices:
+                            st.error("Please select at least one record to delete.")
+                        else:
+                            # Remove the selected records
+                            saved_data = saved_data.drop(delete_indices).sort_values(
+                                by="NAME OF THE DISTRICT", ascending=True).reset_index(drop=True)
+
+                            # Save the updated data back to storage
+                            update_file(master_data_id, saved_data)
+
+                            # Success message
+                            st.success("Selected records deleted successfully!")
+                            st.dataframe(saved_data[saved_data["NAME OF THE DISTRICT"] == selected_district_name])
+                else:
+                    st.write("No entries available to delete.")
+
+            # Download Functionality
+            st.download_button(
+                label="Download District Records",
+                data=saved_data.to_csv(index=False).encode('utf-8'),
+                file_name="District_Records.csv",
+                mime="text/csv"
+            )
+
+
+
 
 
         elif type_choice == "Public":
+
             public_data_id = "1sO08BfwN1gzNs_N7XDq1RnqMgJDDKMdq_nsaNhmjKhs"
             public = read_file(public_data_id)
             public_master_id = "1EdEySmYe6ZJUW16f65_q30nkqfbvDADjcmEkAEJrrL4"
@@ -262,26 +394,18 @@ if st.session_state['authentication_status']:
 
             # Initialize session state for checked Aadhaar numbers
             p_choice = st.radio("", ["Validation", "Entry"], horizontal=True)
-            if p_choice == "Validation":
 
-                # if "checked_aadhar" not in st.session_state:
-                #     st.session_state["checked_aadhar"] = set()
-                # # Input for Aadhaar Number
+            if p_choice == "Validation":
+                # Validation logic remains the same
                 aadhar_no = st.text_input("Enter Aadhaar Number")
                 if aadhar_no:
-                    # # Check if the Aadhaar number has already been checked
-                    # if aadhar_no in st.session_state["checked_aadhar"]:
-                    #     st.warning(f"You have already checked Aadhaar Number {aadhar_no}.")
-                    # else:
-                    #     # Add the Aadhaar number to the checked list
-                    #     st.session_state["checked_aadhar"].add(aadhar_no)
                     if aadhar_no in check_file["checked_aadhar_no"].astype(str).values:
                         st.warning(f"You have already checked Aadhaar Number {aadhar_no}.")
                     else:
-                        check_file = pd.concat([check_file, pd.DataFrame([{"checked_aadhar_no":str(aadhar_no)}])], ignore_index=True)
-                        update_file(checked_id,check_file)
+                        check_file = pd.concat([check_file, pd.DataFrame([{"checked_aadhar_no": str(aadhar_no)}])],
+                                               ignore_index=True)
+                        update_file(checked_id, check_file)
 
-                    # Check if the Aadhaar number exists in the database
                     if aadhar_no in public["AADHAR No.1"].astype(str).values:
                         Name_b = public[public["AADHAR No.1"] == aadhar_no]["NAME"].values.tolist()[0]
                         Art_n = public[public["AADHAR No.1"] == aadhar_no]["BENEFICIARY ITEM"].values.tolist()[0]
@@ -292,38 +416,72 @@ if st.session_state['authentication_status']:
                         st.success(f"Aadhaar Number {aadhar_no} is NOT present in the database.")
 
             if p_choice == "Entry":
-                # Input fields for adding new details or searching for existing ones
-                st.header("Public Request")
 
-                # Choose action
+                st.header("Public Request")
                 action = st.radio("Action", options=["Add", "Edit", "Delete"], horizontal=True)
+                # Initialize session state for form fields
+                if "form_data" not in st.session_state:
+                    st.session_state["form_data"] = {
+                        "app_no": "",
+                        "aadhar": "",
+                        "name": "",
+                        "handicapped": "No",
+                        "address": "",
+                        "mobile": "",
+                        "article_name": "",  # Initialize as empty
+                        "quantity": 1,
+                        "comment": "No"
+                    }
 
                 # Input common fields
-                app_no = st.text_input("Application Number (e.g., P 001)")
+                app_no = st.text_input("Application Number (e.g., P 001)",
+                                       value=st.session_state["form_data"]["app_no"])
+
+                st.session_state["form_data"]["app_no"] = app_no
 
                 if action == "Add":
-                    aadhar = st.text_input("Aadhaar Number")
-                    name = st.text_input("Name")
-                    handicapped = st.radio("Handicapped", options=["Yes", "No"], horizontal=True)
-                    address = st.text_area("Address")
-                    mobile = st.text_input("Mobile Number")
-                    article_name = st.selectbox("Select Article Name", article["Articles"].unique().tolist())
+                    aadhar = st.text_input("Aadhaar Number", value=st.session_state["form_data"]["aadhar"])
+                    name = st.text_input("Name", value=st.session_state["form_data"]["name"])
+                    handicapped = st.radio("Handicapped", options=["Yes", "No"], horizontal=True,
+                                           index=["Yes", "No"].index(st.session_state["form_data"]["handicapped"]))
+                    address = st.text_area("Address", value=st.session_state["form_data"]["address"])
+                    mobile = st.text_input("Mobile Number", value=st.session_state["form_data"]["mobile"])
+                    # Ensure article_name is not defaulted to the first element
+                    article_options = article["Articles"].unique().tolist()
+                    article_name = st.selectbox(
+                        "Select Article Name",
+                        options=article_options,
+                        index=article_options.index(st.session_state["form_data"]["article_name"]) if
+                        st.session_state["form_data"]["article_name"] in article_options else 0
+                    )
 
                     cpu = st.number_input("Cost Per Unit",
                                           value=article[article["Articles"] == article_name]["Cost per unit"].tolist()[
                                               0], disabled=True)
-
-                    quantity = st.number_input("Quantity*", min_value=1, step=1)
-
+                    quantity = st.number_input("Quantity*", min_value=1, step=1,
+                                               value=st.session_state["form_data"]["quantity"])
                     default_total_value = quantity * cpu
-                    # Allow user to edit if needed (pre-filled with the calculated value)
+
                     total_value = st.number_input("Total Value", value=default_total_value, min_value=0,
                                                   disabled=(cpu != 0))
-                    comment = st.text_area("Comments",height=68,value="No")
-                    # Submit button for adding new records
+
+                    comment = st.text_area("Comments", height=68, value=st.session_state["form_data"]["comment"])
+
+                    # Update session state with current values
+                    st.session_state["form_data"].update({
+                        "aadhar": aadhar,
+                        "name": name,
+                        "handicapped": handicapped,
+                        "address": address,
+                        "mobile": mobile,
+                        "article_name": article_name,
+                        "quantity": quantity,
+                        "comment": comment
+                    })
+
                     if st.button("Submit"):
+
                         try:
-                            # Validate application number and Aadhaar
                             if not app_no:
                                 st.warning("Application Number cannot be empty.")
                             elif app_no in public_master["App. No."].values:
@@ -335,7 +493,6 @@ if st.session_state['authentication_status']:
                             elif aadhar in public_master["Aadhar (Without Space)"].values:
                                 st.error("Aadhaar Number is already added to an application.")
                             else:
-                                # Create a new entry
                                 new_entry = {
                                     "App. No.": str(app_no),
                                     "Aadhar (Without Space)": str(aadhar),
@@ -345,24 +502,38 @@ if st.session_state['authentication_status']:
                                     "Mobile": str(mobile),
                                     "Article Name": article_name,
                                     "Comments": comment,
-                                    "Cost Per Unit": int(total_value/quantity if cpu == 0 else cpu),
+                                    "Cost Per Unit": int(total_value / quantity if cpu == 0 else cpu),
                                     "Total Value": int(total_value),
                                     "Quantity": int(quantity),
-                                    "Beneficiary Type":"Public"
+                                    "Beneficiary Type": "Public"
                                 }
 
-                                # Append the new entry to the DataFrame
-                                public_master = pd.concat([public_master, pd.DataFrame([new_entry])],ignore_index=True
-                                ).sort_values(by=["App. No."], ascending=True).reset_index(drop=True)
+                                public_master = pd.concat([public_master, pd.DataFrame([new_entry])],ignore_index=True).sort_values(by=["App. No."],
+                                                                                         ascending=True).reset_index(drop=True)
 
-                                # Save the updated data back to the file
                                 update_file(public_master_id, public_master)
 
-                                # Success message and updated DataFrame display
                                 st.success(f"Application {app_no} added successfully!")
-                                st.data_editor(public_master)
+
+                                st.dataframe(public_master)
+
+                                # Reset form fields
+
+                                st.session_state["form_data"] = {
+                                    "app_no": "",
+                                    "aadhar": "",
+                                    "name": "",
+                                    "handicapped": "No",
+                                    "address": "",
+                                    "mobile": "",
+                                    "article_name": "",  # Reset to empty
+                                    "quantity": 1,
+                                    "comment": "No"
+                                }
+
                         except Exception as e:
                             st.error(f"An error occurred: {str(e)}")
+
 
                 elif action == "Edit":
 
@@ -446,7 +617,6 @@ if st.session_state['authentication_status']:
                     data=public_master.to_csv(index=False).encode('utf-8'),
                     file_name="Public Beneficiaries Records.csv",
                     mime="text/csv")
-
 
 
         elif type_choice == "Institutions & Others":
@@ -754,7 +924,7 @@ if st.session_state['authentication_status']:
                     delete_indices = []
                     for index, row in selected_entries.iterrows():
                         if st.checkbox(
-                                f"Delete {row['Article Name']} (Qty: {row['Quantity']}, Total: ₹{row['Total Value']})",
+                                f"Delete {row['Article Name']} (Qty: {row['Quantity']}, Total: ₹{row['Total Value']}, Comments: {row['Comments']})",
                                 key=f"delete_{index}"):
                             delete_indices.append(index)
 
@@ -776,6 +946,12 @@ if st.session_state['authentication_status']:
                 else:
                     st.write("No entries available to delete.")
 
+            inst_fund = inst_data['Total Value'].sum()
+            # color = ?
+            st.markdown(
+                f"<h5>Total Accrued: ₹ <span style='color:{'Green' if inst_fund >= 0 else 'Red'};'>{inst_fund:,.0f}</span></h5>",
+                unsafe_allow_html=True)
+
             st.download_button(
                 label="Download Institution Records",
                 data=inst_data.to_csv(index=False).encode('utf-8'),
@@ -785,6 +961,79 @@ if st.session_state['authentication_status']:
             )
 
 
+
+
+
+
+    if selected_tab == "Manage Articles":
+        st.header("Manage Articles")
+
+        article_options = ["Add New"] + list(article["Articles"].unique())
+        article_name = st.selectbox("Select Article", article_options)
+
+        if article_name == "Add New":
+            # Adding a new article
+            new_article = st.text_input("Enter New Article Name*")
+            new_cpu = st.number_input("Enter Cost Per Unit*", min_value=0)
+            new_item_type = st.radio("Select Type", ["Article", "Aid", "Project"], horizontal=True)
+
+            if st.button("Save Article"):
+                if new_article:
+                    new_article_entry = {
+                        "Articles": new_article,
+                        "Cost per unit": new_cpu,
+                        "Item Type": new_item_type,
+                    }
+
+                    # Append new article and remove duplicates
+                    article = pd.concat([article, pd.DataFrame([new_article_entry])], ignore_index=True).sort_values(by="Articles",ascending=True).reset_index(drop=True)
+                    article.drop_duplicates(subset=["Articles","Cost per unit"], inplace=True)
+
+                    # Save updated article data
+                    update_file(article_data_id,article)
+
+                    st.success(f"Article '{new_article}' added successfully!")
+                    st.dataframe(article)
+                else:
+                    st.error("Please enter a valid article name.")
+
+        else:
+            # Editing an existing article with a checkbox to enable editing
+            existing_article = article[article["Articles"] == article_name].iloc[0]
+
+            edit_enabled = st.checkbox("Edit", key=f"edit_{article_name}")
+
+            edit_cpu = st.number_input(
+                "Cost Per Unit*",
+                min_value=0,
+                value=int(existing_article["Cost per unit"]),
+                disabled=not edit_enabled
+            )
+
+            edit_item_type = st.radio(
+                "Item Type",
+                ["Article", "Aid", "Project"],
+                horizontal=True,
+                index=["Article", "Aid", "Project"].index(existing_article["Item Type"]),
+                disabled=not edit_enabled
+            )
+
+            if edit_enabled and st.button("Update Article"):
+                article.loc[article["Articles"] == article_name, "Cost per unit"] = edit_cpu
+                article.loc[article["Articles"] == article_name, "Item Type"] = edit_item_type
+
+                # Save updated article data
+                update_file(article_data_id,article)
+
+                st.success(f"Article '{article_name}' updated successfully!")
+                st.dataframe(article)
+
+            # Delete functionality
+            if st.button("Delete Article"):
+                article = article[article["Articles"] != article_name]
+                update_file(article_data_id,article)
+                st.success(f"Article '{article_name}' deleted successfully!")
+                st.dataframe(article)
 
 elif st.session_state['authentication_status'] is False:
     st.error('Username/password is incorrect')
