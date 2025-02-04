@@ -11,7 +11,6 @@ import time
 from yaml.loader import SafeLoader
 
 
-
 with open('config.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)
 
@@ -94,7 +93,7 @@ if st.session_state['authentication_status']:
 
 
     # Sidebar Navigation
-    selected_tab = st.sidebar.radio("Select Tab", ["Beneficiary Entry","Manage Articles"])
+    selected_tab = st.sidebar.radio("Select Tab", ["Beneficiary Entry","Manage Articles", "Inventory"])
 
     if selected_tab == "Beneficiary Entry":
         # Radio buttons to select type
@@ -125,22 +124,18 @@ if st.session_state['authentication_status']:
             if action == "Add":
 
                 # District Name
-                st.session_state["district_name"] = st.selectbox(
-                    "District Name*",
-                    district["District Name"].tolist(),
+                st.session_state["district_name"] = st.selectbox("District Name*",district["District Name"].tolist(),
                     index=0 if not st.session_state["district_name"] else district["District Name"].tolist().index(
-                        st.session_state["district_name"])
-                )
+                        st.session_state["district_name"]))
+                dm = st.session_state["district_name"]
                 pname = district[district["District Name"] == st.session_state["district_name"]]["President Name"].values.tolist()[0]
                 pno = str(district[district["District Name"] == st.session_state["district_name"]]["Mobile Number"].values.tolist()[0])
+
                 st.markdown(f"<h4>President: <b>{pname}</b>, Mobile: <b>{pno}</b></h4>", unsafe_allow_html=True, )
 
                 # Article Selection
-                st.session_state["selected_articles"] = st.multiselect(
-                    "Select Articles*",
-                    article["Articles"].tolist(),
-                    default=st.session_state["selected_articles"]
-                )
+                st.session_state["selected_articles"] = st.multiselect("Select Articles*",article["Articles"].tolist(),
+                    default=st.session_state["selected_articles"])
 
                 # Article Details
                 article_entries = []
@@ -151,12 +146,8 @@ if st.session_state['authentication_status']:
 
                     with col1:
                         # Use a unique key by combining article name and district name
-                        quantity = st.number_input(
-                            f"Quantity of {article_name}*",
-                            min_value=1,
-                            step=1,
-                            key=f"qty_{article_name}_{st.session_state['district_name']}"  # Unique key
-                        )
+                        quantity = st.number_input(f"Quantity of {article_name}*",min_value=1,step=1,key=f"qty_{article_name}_{st.session_state['district_name']}")
+
                     cost_per_unit = article.loc[article["Articles"] == article_name, "Cost per unit"].values[0]
 
                     with col2:
@@ -165,21 +156,16 @@ if st.session_state['authentication_status']:
                     with col3:
                         if cost_per_unit == 0:
                             total_value = st.number_input(
-                                f"Total Value for {article_name}*",
-                                min_value=0,
-                                step=1,
-                                key=f"total_value_{article_name}_{st.session_state['district_name']}"
-                            )
+                                f"Total Value for {article_name}*",min_value=0,step=1,key=f"total_value_{article_name}_{st.session_state['district_name']}")
                         else:
                             total_value = quantity * cost_per_unit
                             st.write(f"Total: ₹{total_value}")
 
                     with col4:
-                        comment = st.text_area(
-                            f"Comment for {article_name}",
-                            key=f"comment_{article_name}_{st.session_state['district_name']}",  # Unique key
-                            value="No", height=68
-                        )
+                        comment = st.text_area(f"Comment for {article_name}",
+                                               key=f"comment_{article_name}_{st.session_state['district_name']}",
+                                               value="No", height=68)
+
                         article_comments[article_name] = comment
 
                     article_entries.append({
@@ -190,8 +176,7 @@ if st.session_state['authentication_status']:
                         "TOTAL COST": total_value,
                         "COMMENTS": article_comments[article_name],
                         "ITEM TYPE": article[article["Articles"] == article_name]["Item Type"].tolist()[0],
-                        "Beneficiary Type": "District",
-                    })
+                        "Beneficiary Type": "District", })
 
                 # Submit Button for new requests
                 if st.button("Add"):
@@ -205,8 +190,7 @@ if st.session_state['authentication_status']:
                             duplicate = saved_data[
                                 (saved_data["NAME OF THE DISTRICT"] == entry["NAME OF THE DISTRICT"]) &
                                 (saved_data["REQUESTED ARTICLE"] == entry["REQUESTED ARTICLE"]) &
-                                (saved_data["COMMENTS"] == entry["COMMENTS"])
-                                ]
+                                (saved_data["COMMENTS"] == entry["COMMENTS"])]
                             if not duplicate.empty:
                                 duplicate_entries.append(entry["REQUESTED ARTICLE"])
 
@@ -236,6 +220,20 @@ if st.session_state['authentication_status']:
                             saved_data = pd.concat([saved_data, flattened_df], ignore_index=True).sort_values(
                                 by=["NAME OF THE DISTRICT", "REQUESTED ARTICLE"], ascending=True).reset_index(drop=True)
 
+                            alloted_funds = district[district["District Name"] == dm]["Alloted Budget"].values.tolist()[0]
+                            remaining_fund = alloted_funds - saved_data[saved_data["NAME OF THE DISTRICT"] == dm]["TOTAL COST"].sum()
+
+                            try:
+                                last_row_index = saved_data[saved_data["NAME OF THE DISTRICT"] == dm].index[-1]
+                                first_row_index = saved_data[saved_data["NAME OF THE DISTRICT"] == dm].index[0]
+
+                                # Add 'ALLOTTED FUND' and 'REMAINING FUND' to the last row
+                                saved_data.loc[saved_data["NAME OF THE DISTRICT"] == dm, ["ALLOTTED FUNDS","EXCESS/SHORTAGE"]] = None
+                                saved_data.loc[first_row_index, "ALLOTTED FUNDS"] = alloted_funds
+                                saved_data.loc[last_row_index, "EXCESS/SHORTAGE"] = remaining_fund
+                            except IndexError:
+                                pass
+
                             # Save the updated data back to storage
                             update_file(master_data_id, saved_data)
 
@@ -244,8 +242,20 @@ if st.session_state['authentication_status']:
 
                             # Success message
                             st.success("Request submitted successfully!")
-                            st.dataframe(saved_data[saved_data["NAME OF THE DISTRICT"] == entry["NAME OF THE DISTRICT"]])
+                            st.dataframe(saved_data[saved_data["NAME OF THE DISTRICT"] == dm])
 
+
+                alloted_funds = district[district["District Name"] == dm]["Alloted Budget"].values.tolist()[0]
+                remaining_fund = alloted_funds - saved_data[saved_data["NAME OF THE DISTRICT"] == dm]["TOTAL COST"].sum()
+                st.markdown(f"<h5>Alloted Fund: ₹ <span style='color:black;'>{alloted_funds:,}</span></h5>",
+                            unsafe_allow_html=True)
+                if remaining_fund > 0:
+                    fund_color = "green"
+                else:
+                    fund_color = "red"
+                st.markdown(
+                    f"<h5>Remaining Fund: ₹ <span style='color:{fund_color};'>{remaining_fund:,}</span></h5>",
+                    unsafe_allow_html=True, )
 
 
             elif action == "Edit":
@@ -257,18 +267,15 @@ if st.session_state['authentication_status']:
                     selected_entries = saved_data[saved_data["NAME OF THE DISTRICT"] == selected_district_name]
                     st.write("Edit the selected entries:")
 
-
                     article_entries = []
                     modified_indices = []  # Track which entries are modified
 
                     for index, row in selected_entries.iterrows():
                         col1, col2, col3, col4 = st.columns(4)
                         with col1:
-                            quantity = st.number_input(
-                                f"Quantity of {row['REQUESTED ARTICLE']}*", min_value=1, step=1,
-                                value=int(row["QUANTITY"]),
-                                key=f"qty_{row['REQUESTED ARTICLE']}_{selected_district_name}_{index}"
-                            )
+                            quantity = st.number_input(f"Quantity of {row['REQUESTED ARTICLE']}*", min_value=1, step=1,
+                                value=int(row["QUANTITY"]),key=f"qty_{row['REQUESTED ARTICLE']}_{selected_district_name}_{index}")
+
 
                         cost_per_unit = article.loc[article["Articles"] == row["REQUESTED ARTICLE"], "Cost per unit"].values[0]
 
@@ -278,27 +285,19 @@ if st.session_state['authentication_status']:
                         with col3:
                             if cost_per_unit == 0:
 
-                                total_value = st.number_input(
-                                    f"Total Value for {row['REQUESTED ARTICLE']}*", min_value=0.0, step=1.0,
-                                    value=float(row["TOTAL COST"]),
-                                    key=f"total_value_{row['REQUESTED ARTICLE']}_{selected_district_name}_{index}"
-                                )
+                                total_value = st.number_input(f"Total Value for {row['REQUESTED ARTICLE']}*", min_value=0.0, step=1.0,
+                                    value=float(row["TOTAL COST"]),key=f"total_value_{row['REQUESTED ARTICLE']}_{selected_district_name}_{index}")
 
                             else:
                                 total_value = quantity * cost_per_unit
                                 st.write(f"Total: ₹{total_value}")
 
                         with col4:
-                            comment = st.text_area(
-                                f"Comment for {row['REQUESTED ARTICLE']}",
-                                key=f"comment_{row['REQUESTED ARTICLE']}_{selected_district_name}_{index}",
-                                value=row["COMMENTS"], height=68
-                            )
+                            comment = st.text_area(f"Comment for {row['REQUESTED ARTICLE']}",key=f"comment_{row['REQUESTED ARTICLE']}_{selected_district_name}_{index}",
+                                value=row["COMMENTS"], height=68)
 
                         # Track modifications
-                        if (quantity != row["QUANTITY"] or total_value != row["TOTAL COST"] or
-                                comment != row["COMMENTS"]
-                        ):
+                        if (quantity != row["QUANTITY"] or total_value != row["TOTAL COST"] or comment != row["COMMENTS"]):
                             modified_indices.append(index)  # Store modified index
 
                         article_entries.append({
@@ -309,8 +308,7 @@ if st.session_state['authentication_status']:
                             "COST PER UNIT": total_value / quantity if cost_per_unit == 0 else cost_per_unit,
                             "TOTAL COST": total_value,
                             "COMMENTS": comment,
-                            "ITEM TYPE": article[article["Articles"] == row["REQUESTED ARTICLE"]]["Item Type"].tolist()[
-                                0],
+                            "ITEM TYPE": article[article["Articles"] == row["REQUESTED ARTICLE"]]["Item Type"].tolist()[0],
                             "Beneficiary Type": "District",
                         })
 
@@ -323,14 +321,37 @@ if st.session_state['authentication_status']:
                                 saved_data.loc[entry["INDEX"], "COMMENTS"] = entry["COMMENTS"]
                                 saved_data.loc[entry["INDEX"], "COST PER UNIT"] = entry["COST PER UNIT"]
 
-                        # 🔹 **Save changes to storage**
+
+                        alloted_funds = district[district["District Name"] == selected_district_name]["Alloted Budget"].values.tolist()[0]
+                        remaining_fund = alloted_funds - saved_data[saved_data["NAME OF THE DISTRICT"] == selected_district_name]["TOTAL COST"].sum()
+
+                        try:
+                            last_row_index = saved_data[saved_data["NAME OF THE DISTRICT"] == selected_district_name].index[-1]
+                            first_row_index = saved_data[saved_data["NAME OF THE DISTRICT"] == selected_district_name].index[0]
+
+                            # Add 'ALLOTTED FUND' and 'REMAINING FUND' to the last row
+                            saved_data.loc[saved_data["NAME OF THE DISTRICT"] == selected_district_name, ["ALLOTTED FUNDS","EXCESS/SHORTAGE"]] = None
+                            saved_data.loc[first_row_index, "ALLOTTED FUNDS"] = alloted_funds
+                            saved_data.loc[last_row_index, "EXCESS/SHORTAGE"] = remaining_fund
+                        except IndexError:
+                            pass
+
+                        #Save changes to storage
                         update_file(master_data_id, saved_data)
                         st.success("Request updated successfully!")
                         st.dataframe(saved_data[saved_data["NAME OF THE DISTRICT"] == selected_district_name])
 
+                    alloted_funds = district[district["District Name"] == selected_district_name]["Alloted Budget"].values.tolist()[0]
+                    remaining_fund = alloted_funds - saved_data[saved_data["NAME OF THE DISTRICT"] == selected_district_name]["TOTAL COST"].sum()
+                    st.markdown(f"<h5>Alloted Fund: ₹ <span style='color:black;'>{alloted_funds:,}</span></h5>",unsafe_allow_html=True)
+                    if remaining_fund > 0:
+                        fund_color = "green"
+                    else:
+                        fund_color = "red"
+                    st.markdown(f"<h5>Remaining Fund: ₹ <span style='color:{fund_color};'>{remaining_fund:,}</span></h5>",unsafe_allow_html=True, )
+
                 else:
                     st.write("No entries available to edit.")
-
 
 
             elif action == "Delete":
@@ -358,8 +379,21 @@ if st.session_state['authentication_status']:
                             st.error("Please select at least one record to delete.")
                         else:
                             # Remove the selected records
-                            saved_data = saved_data.drop(delete_indices).sort_values(
-                                by="NAME OF THE DISTRICT", ascending=True).reset_index(drop=True)
+                            saved_data = saved_data.drop(delete_indices).sort_values(by="NAME OF THE DISTRICT", ascending=True).reset_index(drop=True)
+
+                            alloted_funds = district[district["District Name"] == selected_district_name]["Alloted Budget"].values.tolist()[0]
+                            remaining_fund = alloted_funds - saved_data[saved_data["NAME OF THE DISTRICT"] == selected_district_name]["TOTAL COST"].sum()
+
+                            try:
+                                last_row_index = saved_data[saved_data["NAME OF THE DISTRICT"] == selected_district_name].index[-1]
+                                first_row_index = saved_data[saved_data["NAME OF THE DISTRICT"] == selected_district_name].index[0]
+
+                                # Add 'ALLOTTED FUND' and 'REMAINING FUND' to the last row
+                                saved_data.loc[saved_data["NAME OF THE DISTRICT"] == selected_district_name, ["ALLOTTED FUNDS","EXCESS/SHORTAGE"]] = None
+                                saved_data.loc[first_row_index, "ALLOTTED FUNDS"] = alloted_funds
+                                saved_data.loc[last_row_index, "EXCESS/SHORTAGE"] = remaining_fund
+                            except IndexError:
+                                pass
 
                             # Save the updated data back to storage
                             update_file(master_data_id, saved_data)
@@ -367,19 +401,28 @@ if st.session_state['authentication_status']:
                             # Success message
                             st.success("Selected records deleted successfully!")
                             st.dataframe(saved_data[saved_data["NAME OF THE DISTRICT"] == selected_district_name])
+
+                    alloted_funds = district[district["District Name"] == selected_district_name]["Alloted Budget"].values.tolist()[0]
+                    remaining_fund = alloted_funds - saved_data[saved_data["NAME OF THE DISTRICT"] == selected_district_name]["TOTAL COST"].sum()
+                    st.markdown(f"<h5>Alloted Fund: ₹ <span style='color:black;'>{alloted_funds:,}</span></h5>",unsafe_allow_html=True)
+                    if remaining_fund > 0:
+                        fund_color = "green"
+                    else:
+                        fund_color = "red"
+                    st.markdown(
+                        f"<h5>Remaining Fund: ₹ <span style='color:{fund_color};'>{remaining_fund:,}</span></h5>",
+                        unsafe_allow_html=True, )
                 else:
                     st.write("No entries available to delete.")
 
+
             # Download Functionality
             st.download_button(
-                label="Download District Records",
+                label="Download Records",
                 data=saved_data.to_csv(index=False).encode('utf-8'),
                 file_name="District_Records.csv",
                 mime="text/csv"
             )
-
-
-
 
 
         elif type_choice == "Public":
@@ -428,14 +471,13 @@ if st.session_state['authentication_status']:
                         "handicapped": "No",
                         "address": "",
                         "mobile": "",
-                        "article_name": "",  # Initialize as empty
+                        "article_name": "",
                         "quantity": 1,
                         "comment": "No"
                     }
 
                 # Input common fields
-                app_no = st.text_input("Application Number (e.g., P 001)",
-                                       value=st.session_state["form_data"]["app_no"])
+                app_no = st.text_input("Application Number (e.g., P 001)",value=st.session_state["form_data"]["app_no"])
 
                 st.session_state["form_data"]["app_no"] = app_no
 
@@ -452,8 +494,7 @@ if st.session_state['authentication_status']:
                         "Select Article Name",
                         options=article_options,
                         index=article_options.index(st.session_state["form_data"]["article_name"]) if
-                        st.session_state["form_data"]["article_name"] in article_options else 0
-                    )
+                        st.session_state["form_data"]["article_name"] in article_options else 0)
 
                     cpu = st.number_input("Cost Per Unit",
                                           value=article[article["Articles"] == article_name]["Cost per unit"].tolist()[
@@ -609,7 +650,7 @@ if st.session_state['authentication_status']:
                     st.dataframe(public_master)
 
                 pub_fund = 5000000 - public_master['Total Value'].sum()
-                # color = ?
+                # color
                 st.markdown(f"<h5>Remaining Fund: ₹ <span style='color:{'Green' if pub_fund >= 0 else 'Red'};'>{pub_fund:,.0f}</span></h5>",
                             unsafe_allow_html=True)
                 st.download_button(
@@ -953,16 +994,12 @@ if st.session_state['authentication_status']:
                 unsafe_allow_html=True)
 
             st.download_button(
-                label="Download Institution Records",
+                label="Download  Records",
                 data=inst_data.to_csv(index=False).encode('utf-8'),
                 file_name="Institution_Records.csv",
                 mime="text/csv"
 
             )
-
-
-
-
 
 
     if selected_tab == "Manage Articles":
@@ -1034,6 +1071,14 @@ if st.session_state['authentication_status']:
                 update_file(article_data_id,article)
                 st.success(f"Article '{article_name}' deleted successfully!")
                 st.dataframe(article)
+
+        # Download Functionality
+        st.download_button(
+            label="Download Article List",
+            data=article.to_csv(index=False).encode('utf-8'),
+            file_name="Article_list.csv",
+            mime="text/csv"
+        )
 
 elif st.session_state['authentication_status'] is False:
     st.error('Username/password is incorrect')
