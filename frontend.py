@@ -1084,7 +1084,7 @@ if selected_tab == "Inventory":
 if selected_tab == "Districts Records":
     st.header("Districts Records")
     rc_data = read_file(master_data_id)
-    dname = st.selectbox(rc_data["NAME OF THE DISTRICT"].unique())
+    dname = st.selectbox("Select District",rc_data["NAME OF THE DISTRICT"].unique())
     st.dataframe(rc_data[rc_data["NAME OF THE DISTRICT"] == dname])
 
 
