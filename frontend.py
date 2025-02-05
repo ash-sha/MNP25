@@ -92,9 +92,9 @@ district = read_file(district_data_id)
 
 
 # Sidebar Navigation
-selected_tab = st.sidebar.radio("Select Tab", ["Beneficiary Entry","Manage Articles", "Inventory", "Districts Records"])
+selected_tab = st.sidebar.radio("Select Tab", ["Article Entry","Manage Articles", "Inventory", "Districts Records"])
 
-if selected_tab == "Beneficiary Entry":
+if selected_tab == "Article Entry":
     # Radio buttons to select type
     type_choice = st.radio("Beneficiary Type", ["District", "Public", "Institutions & Others"], horizontal=True)
 
