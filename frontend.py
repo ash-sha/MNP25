@@ -92,7 +92,7 @@ district = read_file(district_data_id)
 
 
 # Sidebar Navigation
-selected_tab = st.sidebar.radio("Select Tab", ["Beneficiary Entry","Manage Articles", "Inventory"])
+selected_tab = st.sidebar.radio("Select Tab", ["Beneficiary Entry","Manage Articles", "Inventory", "Districts Records"])
 
 if selected_tab == "Beneficiary Entry":
     # Radio buttons to select type
@@ -1000,7 +1000,6 @@ if selected_tab == "Beneficiary Entry":
 
         )
 
-
 if selected_tab == "Manage Articles":
     st.header("Manage Articles")
 
@@ -1081,6 +1080,13 @@ if selected_tab == "Manage Articles":
 
 if selected_tab == "Inventory":
     st.header("Inventory")
+
+if selected_tab == "Districts Records":
+    st.header("Districts Records")
+    rc_data = read_file(master_data_id)
+    dname = st.selectbox(rc_data["NAME OF THE DISTRICT"].unique())
+    st.dataframe(rc_data[rc_data["NAME OF THE DISTRICT"] == dname])
+
 
 # elif st.session_state['authentication_status'] is False:
 #     st.error('Username/password is incorrect')
