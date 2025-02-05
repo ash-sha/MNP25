@@ -1,12 +1,12 @@
 cookie:
   expiry_days: 30
   key: omsakthi
-  name: passkey
+  name: streamlit_auth
 credentials:
   usernames:
     admin:
       email: maruvoorhelp@gmail.com
       failed_login_attempts: 0
-      logged_in: false
+      logged_in: True
       name: Administrator
       password: mnp@2025
