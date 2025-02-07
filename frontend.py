@@ -17,7 +17,7 @@ with open('config.yaml') as file:
 # Initialize App
 st.set_page_config(page_title="மக்கள் நலப்பணி 2025", layout="wide")
 st.title("மக்கள் நலப்பணி 2025")
-
+st.logo("amma.png",size="large")
 
 # # Pass the required configurations to the authenticator
 authenticator = stauth.Authenticate(
@@ -27,7 +27,7 @@ authenticator = stauth.Authenticate(
     config['cookie']['expiry_days'])
 
 authenticator.login()
-#
+
 if st.session_state['authentication_status']:
     authenticator.logout("Logout","sidebar")
 
@@ -41,9 +41,6 @@ if st.session_state['authentication_status']:
     inst_data_id = "1dOMubywUqJId2gXHwNWp185L3QmadUnwxyFf0DC9M1s"
     ord_req_id = "1ou21kOkXQpL-hoaJ-11av2m7Kwk5hsif65jVOiFaU2Y"
 
-    ## Access API from local json
-    # creds = service_account.Credentials.from_service_account_file('mnpdatabase-ca1a93fefdd6.json',
-    #         scopes=['https://www.googleapis.com/auth/drive'])
 
     ## Access via streamlit secrets
     credentials_dict = json.loads(st.secrets["gcp"]["credentials"])
@@ -94,7 +91,7 @@ if st.session_state['authentication_status']:
 
 
     # Sidebar Navigation
-    selected_tab = st.sidebar.radio("Select Tab", ["Article Entry","Manage Articles", "Inventory", "Districts Records"])
+    selected_tab = st.sidebar.radio("Select Tab", ["Article Entry","Manage Articles", "Inventory", "District Records"])
 
     if selected_tab == "Article Entry":
         # Radio buttons to select type
@@ -425,7 +422,6 @@ if st.session_state['authentication_status']:
                 mime="text/csv"
             )
 
-
         elif type_choice == "Public":
 
             public = read_file(public_data_id)
@@ -657,7 +653,6 @@ if st.session_state['authentication_status']:
                     data=public_master.to_csv(index=False).encode('utf-8'),
                     file_name="Public Beneficiaries Records.csv",
                     mime="text/csv")
-
 
         elif type_choice == "Institutions & Others":
 
@@ -999,6 +994,7 @@ if st.session_state['authentication_status']:
 
             )
 
+
     if selected_tab == "Manage Articles":
         st.header("Manage Articles")
 
@@ -1077,11 +1073,13 @@ if st.session_state['authentication_status']:
             mime="text/csv"
         )
 
-    if selected_tab == "Districts Records":
+
+    if selected_tab == "District Records":
         st.header("Districts Records")
         rc_data = read_file(master_data_id)
         dname = st.selectbox("Select District",rc_data["NAME OF THE DISTRICT"].unique())
         st.dataframe(rc_data[rc_data["NAME OF THE DISTRICT"] == dname])
+
 
     if selected_tab == "Inventory":
         st.header("Inventory Management")
