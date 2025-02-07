@@ -36,7 +36,10 @@ st.title("மக்கள் நலப்பணி 2025")
 master_data_id = "1ry614-7R4-s0uQcv0zrNeS4O0KAbhVEC67rl5_VllGI"  # Replace with your file's ID
 article_data_id = "1b7eyqlN3lTapBRYcO1VrXGsj_gBVSxQLIyLCPu3UcG8"
 district_data_id = "1lwJL-_KQaOY3VSd2cOeOdiR5QOn8yvX3zp6xNfQJo9U"
-
+public_data_id = "1sO08BfwN1gzNs_N7XDq1RnqMgJDDKMdq_nsaNhmjKhs"
+public_master_id = "1EdEySmYe6ZJUW16f65_q30nkqfbvDADjcmEkAEJrrL4"
+inst_data_id = "1dOMubywUqJId2gXHwNWp185L3QmadUnwxyFf0DC9M1s"
+ord_req_id = "1ou21kOkXQpL-hoaJ-11av2m7Kwk5hsif65jVOiFaU2Y"
 
 ## Access API from local json
 # creds = service_account.Credentials.from_service_account_file('mnpdatabase-ca1a93fefdd6.json',
@@ -83,7 +86,6 @@ def update_file(file_id, updated_df):
     alert1 = st.success(f"File updated: {updated_file.get('id')}")
     time.sleep(1)
     alert1.empty()
-
 
 
 # Load Data
@@ -426,9 +428,7 @@ if selected_tab == "Article Entry":
 
     elif type_choice == "Public":
 
-        public_data_id = "1sO08BfwN1gzNs_N7XDq1RnqMgJDDKMdq_nsaNhmjKhs"
         public = read_file(public_data_id)
-        public_master_id = "1EdEySmYe6ZJUW16f65_q30nkqfbvDADjcmEkAEJrrL4"
         public_master = read_file(public_master_id)
         public_master["Aadhar (Without Space)"] = public_master["Aadhar (Without Space)"].astype(str)
         checked_id = "1X12wSEFnt7mivh5dysPSnH4nVZZPfPJgWBUk3e_oO7c"
@@ -665,7 +665,6 @@ if selected_tab == "Article Entry":
         st.header("Institution & Other Requests")
 
         # Load institution data (replace with your actual file reading)
-        inst_data_id = "1dOMubywUqJId2gXHwNWp185L3QmadUnwxyFf0DC9M1s"
         inst_data = read_file(inst_data_id)
 
 
@@ -1078,14 +1077,112 @@ if selected_tab == "Manage Articles":
         mime="text/csv"
     )
 
-if selected_tab == "Inventory":
-    st.header("Inventory")
-
 if selected_tab == "Districts Records":
     st.header("Districts Records")
     rc_data = read_file(master_data_id)
     dname = st.selectbox("Select District",rc_data["NAME OF THE DISTRICT"].unique())
     st.dataframe(rc_data[rc_data["NAME OF THE DISTRICT"] == dname])
+
+if selected_tab == "Inventory":
+    st.header("Inventory Management")
+    # Read and process data FOR INVENTORY
+
+    district_df = read_file(master_data_id)[["REQUESTED ARTICLE", "QUANTITY", "Beneficiary Type"]]
+    public_df = read_file(public_master_id).rename(columns={"Article Name": "REQUESTED ARTICLE", "Quantity": "QUANTITY"})[
+        ["REQUESTED ARTICLE", "QUANTITY", "Beneficiary Type"]]
+    inst_df = read_file(inst_data_id).rename(columns={"Article Name": "REQUESTED ARTICLE", "Quantity": "QUANTITY"})[
+        ["REQUESTED ARTICLE", "QUANTITY", "Beneficiary Type"]]
+    final = pd.concat([district_df, public_df, inst_df]).reset_index(drop=True).groupby(
+        ["REQUESTED ARTICLE", "Beneficiary Type"], as_index=False).sum()
+
+
+    selected_inventory = st.selectbox("Select Inventory", final["REQUESTED ARTICLE"].unique())
+
+    filtered_final = final[final["REQUESTED ARTICLE"] == selected_inventory]
+    total = filtered_final["QUANTITY"].sum()
+
+    # Check if data is available
+    if filtered_final.empty:
+        st.markdown("**No data available for this inventory item.**")
+    else:
+        # Create four columns
+        col1, col2, col3, col4 = st.columns(4)
+
+        # Define a mapping of beneficiary types to columns
+        column_map = {"District": col1,"Public": col2,"Institution": col3,"Others": col4 }
+
+        # Initialize each column to 0 if the corresponding beneficiary type is missing
+        for beneficiary in column_map.keys():
+            # Filter the rows for the specific beneficiary type
+            filtered_beneficiary = filtered_final[filtered_final["Beneficiary Type"] == beneficiary]
+            quantity = filtered_beneficiary["QUANTITY"].sum() if not filtered_beneficiary.empty else 0
+            column_map[beneficiary].markdown(f"<h2>{beneficiary}: <span style='color:Green;'>{quantity}</span></h2>",unsafe_allow_html=True)
+        st.markdown(f"<h2>Total : <span style='color:Blue;'>{total}</span></h2>", unsafe_allow_html=True)
+
+
+    # Pivot the DataFrame to create columns for each Beneficiary Type and total
+    pivot_df = final.pivot_table(index="REQUESTED ARTICLE",columns="Beneficiary Type",values="QUANTITY",aggfunc="sum",fill_value=0)
+
+    # Reset index and add missing columns for Beneficiary Types
+    pivot_df = pivot_df.reset_index()
+    pivot_df["District"] = pivot_df.get("District", 0)
+    pivot_df["Public"] = pivot_df.get("Public", 0)
+    pivot_df["Institution"] = pivot_df.get("Institution", 0)
+    pivot_df["Others"] = pivot_df.get("Others", 0)
+
+    # Calculate Total Quantity
+    pivot_df["Total"] = pivot_df[["District", "Public", "Institution", "Others"]].sum(axis=1)
+
+    # Add input fields for ordered quantity and calculate remaining quantity
+    existing_data = read_file(ord_req_id)
+
+    # Ensure required columns exist in the existing data
+    if "Ordered Quantity" not in existing_data:
+        existing_data["Ordered Quantity"] = 0
+    if "Remaining Quantity" not in existing_data:
+        existing_data["Remaining Quantity"] = existing_data.get("Total", 0)
+
+    # Merge pivot_df with existing data to include all articles
+    updated_df = pivot_df.merge(
+        existing_data[["REQUESTED ARTICLE", "Ordered Quantity", "Remaining Quantity"]],
+        on="REQUESTED ARTICLE",
+        how="left",
+        suffixes=("", "_old")
+    )
+
+    # Fill NaN values for Ordered Quantity and Remaining Quantity
+    updated_df["Ordered Quantity"] = updated_df["Ordered Quantity"].fillna(0)
+    updated_df["Remaining Quantity"] = updated_df["Remaining Quantity"].fillna(updated_df["Total"])
+
+    # Get the existing ordered quantity for the selected inventory
+    ex_or_qty = int(updated_df.loc[updated_df["REQUESTED ARTICLE"] == selected_inventory, "Ordered Quantity"].values[0])
+
+    # Input for ordered quantity
+    ordered_quantity = st.number_input("Enter Ordered Quantity", min_value=0, max_value=total, value=ex_or_qty)
+    remaining_quantity = total - ordered_quantity
+
+    # Display existing and remaining quantities
+    st.markdown(f"<h5>Ordered: <span style='color:black;'>{ex_or_qty}</span></h5>", unsafe_allow_html=True)
+    st.markdown(f"<h5>Remaining: <span style='color:black;'>{remaining_quantity}</span></h5>", unsafe_allow_html=True)
+
+    # Update the ordered and remaining quantities for the selected inventory
+    if st.button("Update Order"):
+        updated_df.loc[updated_df["REQUESTED ARTICLE"] == selected_inventory, "Ordered Quantity"] = ordered_quantity
+        updated_df.loc[updated_df["REQUESTED ARTICLE"] == selected_inventory, "Remaining Quantity"] = remaining_quantity
+
+        # Save the updated data
+        update_file(ord_req_id, updated_df)
+        st.success("Ordered quantity updated successfully!")
+
+    # Download the updated summary
+    st.download_button(
+        label="Download Summary",
+        data=updated_df.to_csv(index=False).encode("utf-8"),
+        file_name="Inventory_Summary.csv",
+        mime="text/csv"
+    )
+    st.write("***Update Before Download**")
+
 
 
 # elif st.session_state['authentication_status'] is False:
