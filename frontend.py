@@ -221,6 +221,9 @@ if st.session_state['authentication_status']:
                             alloted_funds = district[district["District Name"] == dm]["Alloted Budget"].values.tolist()[0]
                             remaining_fund = alloted_funds - saved_data[saved_data["NAME OF THE DISTRICT"] == dm]["TOTAL COST"].sum()
 
+                            # to resolve mismatched cells
+                            saved_data = saved_data.reset_index(drop=True)
+
                             try:
                                 last_row_index = saved_data[saved_data["NAME OF THE DISTRICT"] == dm].index[-1]
                                 first_row_index = saved_data[saved_data["NAME OF THE DISTRICT"] == dm].index[0]
@@ -322,7 +325,8 @@ if st.session_state['authentication_status']:
 
                         alloted_funds = district[district["District Name"] == selected_district_name]["Alloted Budget"].values.tolist()[0]
                         remaining_fund = alloted_funds - saved_data[saved_data["NAME OF THE DISTRICT"] == selected_district_name]["TOTAL COST"].sum()
-
+                        # to resolve mismatched cells
+                        saved_data = saved_data.reset_index(drop=True)
                         try:
                             last_row_index = saved_data[saved_data["NAME OF THE DISTRICT"] == selected_district_name].index[-1]
                             first_row_index = saved_data[saved_data["NAME OF THE DISTRICT"] == selected_district_name].index[0]
@@ -381,6 +385,9 @@ if st.session_state['authentication_status']:
 
                             alloted_funds = district[district["District Name"] == selected_district_name]["Alloted Budget"].values.tolist()[0]
                             remaining_fund = alloted_funds - saved_data[saved_data["NAME OF THE DISTRICT"] == selected_district_name]["TOTAL COST"].sum()
+
+                            # to resolve mismatched cells
+                            saved_data = saved_data.reset_index(drop=True)
 
                             try:
                                 last_row_index = saved_data[saved_data["NAME OF THE DISTRICT"] == selected_district_name].index[-1]
