@@ -1168,7 +1168,7 @@ if st.session_state['authentication_status']:
             updated_df.loc[updated_df["REQUESTED ARTICLE"] == selected_inventory, "Ordered Quantity"] = int(ordered_quantity)
             updated_df.loc[updated_df["REQUESTED ARTICLE"] == selected_inventory, "Remaining Quantity"] = int(remaining_quantity)
 
-            updated_df["Remaining Quantity"] = int(updated_df["Total"] - updated_df["Ordered Quantity"])
+            updated_df["Remaining Quantity"] = int(updated_df["Total"]) - int(updated_df["Ordered Quantity"])
             # Save the updated data
             update_file(ord_req_id, updated_df)
             st.success("Ordered quantity updated successfully!")
