@@ -1149,8 +1149,8 @@ if st.session_state['authentication_status']:
         )
 
         # Fill NaN values for Ordered Quantity and Remaining Quantity
-        updated_df["Ordered Quantity"] = int(updated_df["Ordered Quantity"].fillna(0))
-        updated_df["Remaining Quantity"] = int(updated_df["Remaining Quantity"].fillna(updated_df["Total"]))
+        updated_df["Ordered Quantity"] = updated_df["Ordered Quantity"].fillna(0)
+        updated_df["Remaining Quantity"] = updated_df["Remaining Quantity"].fillna(updated_df["Total"])
 
         # Get the existing ordered quantity for the selected inventory
         ex_or_qty = int(updated_df.loc[updated_df["REQUESTED ARTICLE"] == selected_inventory, "Ordered Quantity"].values[0])
