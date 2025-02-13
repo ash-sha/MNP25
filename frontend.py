@@ -546,6 +546,7 @@ if st.session_state['authentication_status']:
                                     "Article Name": article_name,
                                     "Comments": comment,
                                     "Cost Per Unit": int(total_value / quantity if cpu == 0 else cpu),
+                                    "ITEM TYPE": article[article["Articles"] == article_name]["Item Type"].tolist()[0],
                                     "Total Value": int(total_value),
                                     "Quantity": int(quantity),
                                     "Beneficiary Type": "Public"
@@ -627,6 +628,7 @@ if st.session_state['authentication_status']:
                                 public_master.loc[public_master["App. No."] == app_no, "Quantity"] = int(quantity)
                                 public_master.loc[public_master["App. No."] == app_no, "Total Value"] = int(total_value)
                                 public_master.loc[public_master["App. No."] == app_no, "Beneficiary Type"] = "Public"
+                                public_master.loc[public_master["App. No."] == app_no, "ITEM TYPE"] = article[article["Articles"] == article_name]["Item Type"].tolist()[0],
 
                                 # Save the updated data back to the file
                                 update_file(public_master_id, public_master)
@@ -756,7 +758,8 @@ if st.session_state['authentication_status']:
                         "Quantity": quantity,
                         "Cost Per Unit": total_value / quantity if cost_per_unit == 0 else cost_per_unit,
                         "Total Value": total_value,
-                        "Comments": article_comments[article_name]
+                        "Comments": article_comments[article_name],
+                        "ITEM TYPE": article[article["Articles"] == article_name]["Item Type"].tolist()[0],
 
                     })
 
@@ -799,7 +802,8 @@ if st.session_state['authentication_status']:
                                     "Quantity": entry["Quantity"],
                                     "Cost Per Unit": entry["Cost Per Unit"],
                                     "Total Value": entry["Total Value"],
-                                    "Comments": entry["Comments"]
+                                    "Comments": entry["Comments"],
+                                    "ITEM TYPE": entry["ITEM TYPE"],
                                 })
 
                             # Convert the flattened articles into a DataFrame
@@ -886,7 +890,8 @@ if st.session_state['authentication_status']:
                             "Quantity": quantity,
                             "Cost Per Unit": total_value / quantity if cost_per_unit == 0 else cost_per_unit,
                             "Total Value": total_value,
-                            "Comments": comment
+                            "Comments": comment,
+                            "ITEM TYPE": article[article["Articles"] == row["Article Name"]]["Item Type"].tolist()[0],
 
                         })
 
@@ -931,7 +936,8 @@ if st.session_state['authentication_status']:
                                         "Quantity": entry["Quantity"],
                                         "Cost Per Unit": entry["Cost Per Unit"],
                                         "Total Value": entry["Total Value"],
-                                        "Comments": entry["Comments"]
+                                        "Comments": entry["Comments"],
+                                        "ITEM TYPE": entry["ITEM TYPE"],
                                     })
 
                                 # Convert the flattened articles into a DataFrame
