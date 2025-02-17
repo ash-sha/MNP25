@@ -19,13 +19,13 @@ st.set_page_config(page_title="மக்கள் நலப்பணி 2025", l
 st.title("மக்கள் நலப்பணி 2025")
 st.logo("amma.png",size="large")
 
-# # # Pass the required configurations to the authenticator
+# # Pass the required configurations to the authenticator
 # authenticator = stauth.Authenticate(
 #     config['credentials'],
 #     config['cookie']['name'],
 #     config['cookie']['key'],
 #     config['cookie']['expiry_days'])
-#
+
 # authenticator.login()
 #
 # if st.session_state['authentication_status']:
@@ -653,9 +653,9 @@ if selected_tab == "Article Entry":
                         st.error("Application not found.")
                 st.dataframe(public_master)
 
-            pub_fund = 5000000 - public_master['Total Value'].sum()
+            pub_fund = public_master['Total Value'].sum()
             # color
-            st.markdown(f"<h5>Remaining Fund: ₹ <span style='color:{'Green' if pub_fund >= 0 else 'Red'};'>{pub_fund:,.0f}</span></h5>",
+            st.markdown(f"<h5>Total Accrued: ₹ <span style='color:{'Green' if pub_fund >= 0 else 'Red'};'>{pub_fund:,.0f}</span></h5>",
                         unsafe_allow_html=True)
             st.download_button(
                 label="Download Records",
@@ -993,16 +993,19 @@ if selected_tab == "Article Entry":
             else:
                 st.write("No entries available to delete.")
 
-        inst_fund = inst_data['Total Value'].sum()
+        inst_fund = inst_data[inst_data["Beneficiary Type"]=="Institution"]['Total Value'].sum()
+        oth_fund = inst_data[inst_data["Beneficiary Type"]=="Others"]['Total Value'].sum()
         # color = ?
+        st.markdown(f"<h5>Total Accrued (Instn): ₹ <span style='color:{'Green' if inst_fund >= 0 else 'Red'};'>{inst_fund:,.0f}</span></h5>",
+            unsafe_allow_html=True)
         st.markdown(
-            f"<h5>Total Accrued: ₹ <span style='color:{'Green' if inst_fund >= 0 else 'Red'};'>{inst_fund:,.0f}</span></h5>",
+            f"<h5>Total Accrued (Others): ₹ <span style='color:{'Green' if oth_fund >= 0 else 'Red'};'>{oth_fund:,.0f}</span></h5>",
             unsafe_allow_html=True)
 
         st.download_button(
-            label="Download  Records",
+            label="Download Records",
             data=inst_data.to_csv(index=False).encode('utf-8'),
-            file_name="Institution_Records.csv",
+            file_name="Instn_Oth_Records.csv",
             mime="text/csv"
 
         )
@@ -1099,13 +1102,13 @@ if selected_tab == "Inventory":
     # Read and process data FOR INVENTORY
 
     district_df = read_file(master_data_id)[["REQUESTED ARTICLE", "QUANTITY", "Beneficiary Type"]]
-    public_df = read_file(public_master_id).rename(columns={"Article Name": "REQUESTED ARTICLE", "Quantity": "QUANTITY"})[
+    public_df = \
+    read_file(public_master_id).rename(columns={"Article Name": "REQUESTED ARTICLE", "Quantity": "QUANTITY"})[
         ["REQUESTED ARTICLE", "QUANTITY", "Beneficiary Type"]]
     inst_df = read_file(inst_data_id).rename(columns={"Article Name": "REQUESTED ARTICLE", "Quantity": "QUANTITY"})[
         ["REQUESTED ARTICLE", "QUANTITY", "Beneficiary Type"]]
     final = pd.concat([district_df, public_df, inst_df]).reset_index(drop=True).groupby(
         ["REQUESTED ARTICLE", "Beneficiary Type"], as_index=False).sum()
-
 
     selected_inventory = st.selectbox("Select Inventory", final["REQUESTED ARTICLE"].unique())
 
@@ -1120,19 +1123,20 @@ if selected_tab == "Inventory":
         col1, col2, col3, col4 = st.columns(4)
 
         # Define a mapping of beneficiary types to columns
-        column_map = {"District": col1,"Public": col2,"Institution": col3,"Others": col4 }
+        column_map = {"District": col1, "Public": col2, "Institution": col3, "Others": col4}
 
         # Initialize each column to 0 if the corresponding beneficiary type is missing
         for beneficiary in column_map.keys():
             # Filter the rows for the specific beneficiary type
             filtered_beneficiary = filtered_final[filtered_final["Beneficiary Type"] == beneficiary]
             quantity = filtered_beneficiary["QUANTITY"].sum() if not filtered_beneficiary.empty else 0
-            column_map[beneficiary].markdown(f"<h2>{beneficiary}: <span style='color:Green;'>{quantity}</span></h2>",unsafe_allow_html=True)
+            column_map[beneficiary].markdown(
+                f"<h2>{beneficiary}: <span style='color:Green;'>{quantity}</span></h2>", unsafe_allow_html=True)
         st.markdown(f"<h2>Total : <span style='color:Blue;'>{total}</span></h2>", unsafe_allow_html=True)
 
-
     # Pivot the DataFrame to create columns for each Beneficiary Type and total
-    pivot_df = final.pivot_table(index="REQUESTED ARTICLE",columns="Beneficiary Type",values="QUANTITY",aggfunc="sum",fill_value=0)
+    pivot_df = final.pivot_table(index="REQUESTED ARTICLE", columns="Beneficiary Type", values="QUANTITY",
+                                 aggfunc="sum", fill_value=0)
 
     # Reset index and add missing columns for Beneficiary Types
     pivot_df = pivot_df.reset_index()
@@ -1166,7 +1170,8 @@ if selected_tab == "Inventory":
     updated_df["Remaining Quantity"] = updated_df["Remaining Quantity"].fillna(updated_df["Total"])
 
     # Get the existing ordered quantity for the selected inventory
-    ex_or_qty = int(updated_df.loc[updated_df["REQUESTED ARTICLE"] == selected_inventory, "Ordered Quantity"].values[0])
+    ex_or_qty = int(
+        updated_df.loc[updated_df["REQUESTED ARTICLE"] == selected_inventory, "Ordered Quantity"].values[0])
 
     # Input for ordered quantity
     ordered_quantity = st.number_input("Enter Ordered Quantity", min_value=0, value=ex_or_qty)
@@ -1174,19 +1179,20 @@ if selected_tab == "Inventory":
 
     # Display existing and remaining quantities
     st.markdown(f"<h5>Ordered: <span style='color:black;'>{ex_or_qty}</span></h5>", unsafe_allow_html=True)
-    st.markdown(f"<h5>Remaining: <span style='color:black;'>{remaining_quantity}</span></h5>", unsafe_allow_html=True)
+    st.markdown(f"<h5>Remaining: <span style='color:black;'>{remaining_quantity}</span></h5>",
+                unsafe_allow_html=True)
 
     # Update the ordered and remaining quantities for the selected inventory
     if st.button("Update Order"):
-        updated_df.loc[updated_df["REQUESTED ARTICLE"] == selected_inventory, "Ordered Quantity"] = int(ordered_quantity)
-        updated_df.loc[updated_df["REQUESTED ARTICLE"] == selected_inventory, "Remaining Quantity"] = int(remaining_quantity)
+        updated_df.loc[updated_df["REQUESTED ARTICLE"] == selected_inventory, "Ordered Quantity"] = int(
+            ordered_quantity)
+        updated_df.loc[updated_df["REQUESTED ARTICLE"] == selected_inventory, "Remaining Quantity"] = int(
+            remaining_quantity)
 
         updated_df["Remaining Quantity"] = updated_df["Total"] - updated_df["Ordered Quantity"]
         # Save the updated data
         update_file(ord_req_id, updated_df)
         st.success("Ordered quantity updated successfully!")
-
-
 
     # Download the updated summary
     st.download_button(
@@ -1236,8 +1242,12 @@ if selected_tab == "All Records":
 
     st.write("Total Beneficiaries: ", "{:,}".format(consold["Quantity"].sum()).replace(",", "X").replace("X", ","))
     st.write("No. of Articles: ","{:,}".format(consold["Article Name"].nunique()).replace(",", "X").replace("X", ","))
-    st.write("Total Value(₹): ", "{:,.0f}".format(consold["Total Value"].sum()).replace(",", "X").replace("X", ","))
 
+    st.write("District Value(₹): ", "{:,.0f}".format(df1["Total Value"].sum()).replace(",", "X").replace("X", ","))
+    st.write("Public Value(₹): ", "{:,.0f}".format(df2["Total Value"].sum()).replace(",", "X").replace("X", ","))
+    st.write("Institution Value(₹): ", "{:,.0f}".format(df3[df3["Beneficiary Type"]=="Institution"]["Total Value"].sum()).replace(",", "X").replace("X", ","))
+    st.write("Others Value(₹): ", "{:,.0f}".format(df3[df3["Beneficiary Type"]=="Others"]["Total Value"].sum()).replace(",", "X").replace("X", ","))
+    st.write("Total Value(₹): ", "{:,.0f}".format(consold["Total Value"].sum()).replace(",", "X").replace("X", ","))
 
 
 # elif st.session_state['authentication_status'] is False:
