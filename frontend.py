@@ -1110,98 +1110,145 @@ if selected_tab == "Inventory":
     final = pd.concat([district_df, public_df, inst_df]).reset_index(drop=True).groupby(
         ["REQUESTED ARTICLE", "Beneficiary Type"], as_index=False).sum()
 
-    selected_inventory = st.selectbox("Select Inventory", final["REQUESTED ARTICLE"].unique())
+    inv_opt = list(final["REQUESTED ARTICLE"].unique()) + ["Sewing Motor"]
+    selected_inventory = st.selectbox("Select Inventory", inv_opt)
 
-    filtered_final = final[final["REQUESTED ARTICLE"] == selected_inventory]
-    total = int(filtered_final["QUANTITY"].sum())
+    if selected_inventory == "Sewing Motor":
+        st.warning("Tracking Motor separately for inventory purposes.")
 
-    # Check if data is available
-    if filtered_final.empty:
-        st.markdown("**No data available for this inventory item.**")
+        # Read order data and ensure required columns exist
+        existing_data = read_file(ord_req_id)
+        if "Ordered Quantity" not in existing_data:
+            existing_data["Ordered Quantity"] = 0
+        if "Remaining Quantity" not in existing_data:
+            existing_data["Remaining Quantity"] = existing_data.get("Total", 0)
+
+        # Check if "Motor" row exists, otherwise add it
+        if "Sewing Motor" not in existing_data["REQUESTED ARTICLE"].values:
+            new_motor_row = pd.DataFrame({"REQUESTED ARTICLE": ["Sewing Motor"],
+                                          "District":[int(existing_data[existing_data["REQUESTED ARTICLE"]=="Sewing Machine ORD / Motor"]["District"].values[0])],
+                                          "Institution": [int(existing_data[existing_data["REQUESTED ARTICLE"] == "Sewing Machine ORD / Motor"]["Institution"].values[0])],
+                                          "Others": [int(existing_data[existing_data["REQUESTED ARTICLE"] == "Sewing Machine ORD / Motor"]["Others"].values[0])],
+                                          "Public": [int(existing_data[existing_data["REQUESTED ARTICLE"] == "Sewing Machine ORD / Motor"]["Public"].values[0])],
+                                          "Total": [int(existing_data[existing_data["REQUESTED ARTICLE"] == "Sewing Machine ORD / Motor"]["Total"].values[0])],
+                                          "Ordered Quantity": [0], "Remaining Quantity": [0]})
+            existing_data = pd.concat([existing_data, new_motor_row], ignore_index=True)
+
+        # Get existing ordered quantity for "Sewing Motor"
+        motor_ordered_qty = int(existing_data.loc[existing_data["REQUESTED ARTICLE"] == "Sewing Motor", "Ordered Quantity"].values[0])
+
+        # Input for ordered quantity of motors
+        ordered_motor_quantity = st.number_input("Enter Ordered Quantity for Motor", min_value=0,
+                                                 value=motor_ordered_qty)
+        remaining_motor_quantity = int(existing_data[existing_data["REQUESTED ARTICLE"] == "Sewing Machine ORD / Motor"]["Total"].values[0]) - ordered_motor_quantity  # No total quantity tracking, so it equals ordered
+
+        st.markdown(f"<h5>Ordered: <span style='color:black;'>{motor_ordered_qty}</span></h5>", unsafe_allow_html=True)
+        st.markdown(f"<h5>Remaining: <span style='color:black;'>{remaining_motor_quantity}</span></h5>",unsafe_allow_html=True)
+
+        # Update motor order tracking
+        if st.button("Update Motor"):
+            existing_data.loc[existing_data["REQUESTED ARTICLE"] == "Sewing Motor", "Ordered Quantity"] = int(ordered_motor_quantity)
+            existing_data.loc[existing_data["REQUESTED ARTICLE"] == "Sewing Motor", "Remaining Quantity"] = int(remaining_motor_quantity)
+            existing_data = existing_data.sort_values("REQUESTED ARTICLE",ascending=True).reset_index(drop=True)
+            update_file(ord_req_id, existing_data)
+            st.success("Motor ordered quantity updated successfully!")
+        st.write("Select other articles to see Download Button")
+
     else:
-        # Create four columns
-        col1, col2, col3, col4 = st.columns(4)
 
-        # Define a mapping of beneficiary types to columns
-        column_map = {"District": col1, "Public": col2, "Institution": col3, "Others": col4}
+        filtered_final = final[final["REQUESTED ARTICLE"] == selected_inventory]
+        total = int(filtered_final["QUANTITY"].sum())
 
-        # Initialize each column to 0 if the corresponding beneficiary type is missing
-        for beneficiary in column_map.keys():
-            # Filter the rows for the specific beneficiary type
-            filtered_beneficiary = filtered_final[filtered_final["Beneficiary Type"] == beneficiary]
-            quantity = filtered_beneficiary["QUANTITY"].sum() if not filtered_beneficiary.empty else 0
-            column_map[beneficiary].markdown(
-                f"<h2>{beneficiary}: <span style='color:Green;'>{quantity}</span></h2>", unsafe_allow_html=True)
-        st.markdown(f"<h2>Total : <span style='color:Blue;'>{total}</span></h2>", unsafe_allow_html=True)
+        # Check if data is available
+        if filtered_final.empty:
+            st.markdown("**No data available for this inventory item.**")
+        else:
+            # Create four columns
+            col1, col2, col3, col4 = st.columns(4)
 
-    # Pivot the DataFrame to create columns for each Beneficiary Type and total
-    pivot_df = final.pivot_table(index="REQUESTED ARTICLE", columns="Beneficiary Type", values="QUANTITY",
-                                 aggfunc="sum", fill_value=0)
+            # Define a mapping of beneficiary types to columns
+            column_map = {"District": col1, "Public": col2, "Institution": col3, "Others": col4}
 
-    # Reset index and add missing columns for Beneficiary Types
-    pivot_df = pivot_df.reset_index()
-    pivot_df["District"] = pivot_df.get("District", 0)
-    pivot_df["Public"] = pivot_df.get("Public", 0)
-    pivot_df["Institution"] = pivot_df.get("Institution", 0)
-    pivot_df["Others"] = pivot_df.get("Others", 0)
+            # Initialize each column to 0 if the corresponding beneficiary type is missing
+            for beneficiary in column_map.keys():
+                filtered_beneficiary = filtered_final[filtered_final["Beneficiary Type"] == beneficiary]
+                quantity = filtered_beneficiary["QUANTITY"].sum() if not filtered_beneficiary.empty else 0
+                column_map[beneficiary].markdown(
+                    f"<h2>{beneficiary}: <span style='color:Green;'>{quantity}</span></h2>", unsafe_allow_html=True)
+            st.markdown(f"<h2>Total : <span style='color:Blue;'>{total}</span></h2>", unsafe_allow_html=True)
 
-    # Calculate Total Quantity
-    pivot_df["Total"] = pivot_df[["District", "Public", "Institution", "Others"]].sum(axis=1)
+        # Pivot the DataFrame to create columns for each Beneficiary Type and total
+        pivot_df = final.pivot_table(index="REQUESTED ARTICLE", columns="Beneficiary Type", values="QUANTITY",aggfunc="sum", fill_value=0)
 
-    # Add input fields for ordered quantity and calculate remaining quantity
-    existing_data = read_file(ord_req_id)
+        # Reset index and add missing columns for Beneficiary Types
+        pivot_df = pivot_df.reset_index()
+        pivot_df["District"] = pivot_df.get("District", 0)
+        pivot_df["Public"] = pivot_df.get("Public", 0)
+        pivot_df["Institution"] = pivot_df.get("Institution", 0)
+        pivot_df["Others"] = pivot_df.get("Others", 0)
 
-    # Ensure required columns exist in the existing data
-    if "Ordered Quantity" not in existing_data:
-        existing_data["Ordered Quantity"] = 0
-    if "Remaining Quantity" not in existing_data:
-        existing_data["Remaining Quantity"] = existing_data.get("Total", 0)
+        # Calculate Total Quantity
+        pivot_df["Total"] = pivot_df[["District", "Public", "Institution", "Others"]].sum(axis=1)
 
-    # Merge pivot_df with existing data to include all articles
-    updated_df = pivot_df.merge(
-        existing_data[["REQUESTED ARTICLE", "Ordered Quantity", "Remaining Quantity"]],
-        on="REQUESTED ARTICLE",
-        how="left",
-        suffixes=("", "_old")
-    )
+        # Add input fields for ordered quantity and calculate remaining quantity
+        existing_data = read_file(ord_req_id)
 
-    # Fill NaN values for Ordered Quantity and Remaining Quantity
-    updated_df["Ordered Quantity"] = updated_df["Ordered Quantity"].fillna(0)
-    updated_df["Remaining Quantity"] = updated_df["Remaining Quantity"].fillna(updated_df["Total"])
+        # Ensure required columns exist in the existing data
+        if "Ordered Quantity" not in existing_data:
+            existing_data["Ordered Quantity"] = 0
+        if "Remaining Quantity" not in existing_data:
+            existing_data["Remaining Quantity"] = existing_data.get("Total", 0)
 
-    # Get the existing ordered quantity for the selected inventory
-    ex_or_qty = int(
-        updated_df.loc[updated_df["REQUESTED ARTICLE"] == selected_inventory, "Ordered Quantity"].values[0])
+        # 🔥 Preserve "Sewing Motor" before merging
+        motor_row = existing_data[existing_data["REQUESTED ARTICLE"] == "Sewing Motor"]
 
-    # Input for ordered quantity
-    ordered_quantity = st.number_input("Enter Ordered Quantity", min_value=0, value=ex_or_qty)
-    remaining_quantity = total - ordered_quantity
+        # Merge pivot_df with existing data to include all articles
+        updated_df = pivot_df.merge(
+            existing_data[["REQUESTED ARTICLE", "Ordered Quantity", "Remaining Quantity"]],
+            on="REQUESTED ARTICLE",
+            how="left",
+            suffixes=("", "_old")
+        )
 
-    # Display existing and remaining quantities
-    st.markdown(f"<h5>Ordered: <span style='color:black;'>{ex_or_qty}</span></h5>", unsafe_allow_html=True)
-    st.markdown(f"<h5>Remaining: <span style='color:black;'>{remaining_quantity}</span></h5>",
-                unsafe_allow_html=True)
+        # Fill NaN values for Ordered Quantity and Remaining Quantity
+        updated_df["Ordered Quantity"] = updated_df["Ordered Quantity"].fillna(0)
+        updated_df["Remaining Quantity"] = updated_df["Remaining Quantity"].fillna(updated_df["Total"])
 
-    # Update the ordered and remaining quantities for the selected inventory
-    if st.button("Update Order"):
-        updated_df.loc[updated_df["REQUESTED ARTICLE"] == selected_inventory, "Ordered Quantity"] = int(
-            ordered_quantity)
-        updated_df.loc[updated_df["REQUESTED ARTICLE"] == selected_inventory, "Remaining Quantity"] = int(
-            remaining_quantity)
+        # 🔥 Ensure "Sewing Motor" is added back to the file
+        if not motor_row.empty:
+            updated_df = pd.concat([updated_df, motor_row], ignore_index=True)
 
-        updated_df["Remaining Quantity"] = updated_df["Total"] - updated_df["Ordered Quantity"]
-        # Save the updated data
-        update_file(ord_req_id, updated_df)
-        st.success("Ordered quantity updated successfully!")
+        # Get the existing ordered quantity for the selected inventory
+        ex_or_qty = int(
+            updated_df.loc[updated_df["REQUESTED ARTICLE"] == selected_inventory, "Ordered Quantity"].values[0])
 
-    # Download the updated summary
-    st.download_button(
-        label="Download Summary",
-        data=updated_df.to_csv(index=False).encode("utf-8"),
-        file_name="Inventory_Summary.csv",
-        mime="text/csv"
-    )
-    st.write("***Update Before Download**")
+        # Input for ordered quantity
+        ordered_quantity = st.number_input("Enter Ordered Quantity", min_value=0, value=ex_or_qty)
+        remaining_quantity = total - ordered_quantity
+
+        # Display existing and remaining quantities
+        st.markdown(f"<h5>Ordered: <span style='color:black;'>{ex_or_qty}</span></h5>", unsafe_allow_html=True)
+        st.markdown(f"<h5>Remaining: <span style='color:black;'>{remaining_quantity}</span></h5>",
+                    unsafe_allow_html=True)
+
+        # Update the ordered and remaining quantities for the selected inventory
+        if st.button("Update Order"):
+            updated_df.loc[updated_df["REQUESTED ARTICLE"] == selected_inventory, "Ordered Quantity"] = int(ordered_quantity)
+            updated_df.loc[updated_df["REQUESTED ARTICLE"] == selected_inventory, "Remaining Quantity"] = int(remaining_quantity)
+            updated_df["Remaining Quantity"] = updated_df["Total"] - updated_df["Ordered Quantity"]
+            updated_df = updated_df.sort_values("REQUESTED ARTICLE",ascending=True).reset_index(drop=True)
+            # Save the updated data
+            update_file(ord_req_id, updated_df)
+            st.success("Ordered quantity updated successfully!")
+
+        # Download the updated summary
+        st.download_button(
+            label="Download Summary",
+            data=updated_df.to_csv(index=False).encode("utf-8"),
+            file_name="Inventory_Summary.csv",
+            mime="text/csv"
+        )
+        st.write("***Update Before Download**")
 
 
 if selected_tab == "All Records":
