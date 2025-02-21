@@ -1097,6 +1097,7 @@ if selected_tab == "District Records":
     st.dataframe(rc_data[rc_data["NAME OF THE DISTRICT"] == dname])
 
 
+
 if selected_tab == "Inventory":
     st.header("Inventory Management")
     # Read and process data FOR INVENTORY
