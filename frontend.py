@@ -1147,6 +1147,11 @@ if selected_tab == "Inventory":
 
         # Update motor order tracking
         if st.button("Update Motor"):
+            existing_data.loc[existing_data["REQUESTED ARTICLE"] == "Sewing Motor", "District"] = int(existing_data[existing_data["REQUESTED ARTICLE"] == "Sewing Machine ORD / Motor"]["District"].values[0])
+            existing_data.loc[existing_data["REQUESTED ARTICLE"] == "Sewing Motor", "Public"] = int(existing_data[existing_data["REQUESTED ARTICLE"] == "Sewing Machine ORD / Motor"]["Public"].values[0])
+            existing_data.loc[existing_data["REQUESTED ARTICLE"] == "Sewing Motor", "Others"] = int(existing_data[existing_data["REQUESTED ARTICLE"] == "Sewing Machine ORD / Motor"]["Others"].values[0])
+            existing_data.loc[existing_data["REQUESTED ARTICLE"] == "Sewing Motor", "Institution"] = int(existing_data[existing_data["REQUESTED ARTICLE"] == "Sewing Machine ORD / Motor"]["Institution"].values[0])
+            existing_data.loc[existing_data["REQUESTED ARTICLE"] == "Sewing Motor", "Total"] = int(existing_data[existing_data["REQUESTED ARTICLE"] == "Sewing Machine ORD / Motor"]["Total"].values[0])
             existing_data.loc[existing_data["REQUESTED ARTICLE"] == "Sewing Motor", "Ordered Quantity"] = int(ordered_motor_quantity)
             existing_data.loc[existing_data["REQUESTED ARTICLE"] == "Sewing Motor", "Remaining Quantity"] = int(remaining_motor_quantity)
             existing_data = existing_data.sort_values("REQUESTED ARTICLE",ascending=True).reset_index(drop=True)
