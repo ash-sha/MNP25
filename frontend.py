@@ -1097,7 +1097,6 @@ if selected_tab == "District Records":
     st.dataframe(rc_data[rc_data["NAME OF THE DISTRICT"] == dname])
 
 
-
 if selected_tab == "Inventory":
     st.header("Inventory Management")
     # Read and process data FOR INVENTORY
@@ -1273,8 +1272,12 @@ if selected_tab == "All Records":
     inst_df = read_file(inst_data_id)[["App. No.", "Institution Name", "Article Name", "ITEM TYPE", "Quantity", "Cost Per Unit", "Total Value",
          "Beneficiary Type", "Comments"]]
     df3 = inst_df.rename(columns={"Institution Name": "Name"})
+
+
     # Consolidated
-    consold = pd.concat([df1, df2, df3]).reset_index(drop=True)
+    consoldi = pd.concat([df1, df2, df3]).reset_index(drop=True)
+    ad = article[["Articles", "Category","Sequence List"]].rename(columns={"Articles": "Article Name","Category": "Article Category"})
+    consold = consoldi.merge(ad, on="Article Name", how='left').reset_index(drop=True)
 
     sl_box=st.selectbox("Beneficiary Type", consold["Beneficiary Type"].unique())
     st.dataframe(consold[consold["Beneficiary Type"] == sl_box])
