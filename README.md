@@ -1,1 +1,1 @@
-ஓம் சக்தி! குருவடி சரணம்! திருவடி சரணம்!
+frontend.py has the code for app. 
